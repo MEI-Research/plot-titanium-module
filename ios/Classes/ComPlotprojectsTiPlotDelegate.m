@@ -280,7 +280,7 @@
 -(void)sendEMANotification:(NSString*)trigger_direction geotrigger:(PlotGeotrigger*)geotrigger {
     NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
     NSString *notText;
-    NSTimeInterval notTimeDelay = (2.0 * 60.0);
+
 
     if (standardUserDefaults) {
         NSString* EMA_NOTIFICATION_IDENTIFIER = @"plotproject.ema.notify";
@@ -294,6 +294,9 @@
             // for dwell, remove any pending notifications before sending this one.
             // [center removePendingNotificationRequestsWithIdentifiers:PENDING_NOTIFICATION_IDS];
             notText = [standardUserDefaults stringForKey:@"plot.notificationText"];
+            NSString* dwell_time_prop = [standardUserDefaults stringForKey:@"plot.projects_dwell_minutes"];
+            NSInteger dwell_time_minutes = [dwell_time_prop integerValue];
+            NSTimeInterval notTimeDelay = (dwell_time_minutes * 60.0);
 
             //notification code to notify location change
             UNMutableNotificationContent* content = [[UNMutableNotificationContent alloc] init];
@@ -301,13 +304,23 @@
             content.body = [NSString localizedUserNotificationStringForKey:notText arguments:nil];
             content.sound = [UNNotificationSound defaultSound];
 
-            // Configure the trigger after n*60 seconds
-            UNTimeIntervalNotificationTrigger* trigger = [UNTimeIntervalNotificationTrigger
-                         triggerWithTimeInterval:notTimeDelay repeats: NO];
+            UNNotificationRequest* request = nil;
 
-            // Create the request object.
-            UNNotificationRequest* request = [UNNotificationRequest
-                requestWithIdentifier:EMA_NOTIFICATION_IDENTIFIER content:content trigger:trigger];
+            // if DWELL is set to > 0 minutes. schedule in the future. otherwise, schedule immediately
+            if (dwell_time_minutes == nil || dwell_time_minutes == 0) {
+                // no dwell
+                request = [UNNotificationRequest
+                    requestWithIdentifier:EMA_NOTIFICATION_IDENTIFIER content:content trigger:nil];
+            } else {
+                // dwell set fo x minutes
+                // Configure the trigger after n*60 seconds
+                UNTimeIntervalNotificationTrigger* trigger = [UNTimeIntervalNotificationTrigger
+                             triggerWithTimeInterval:notTimeDelay repeats: NO];
+
+                // Create the request object.
+                request = [UNNotificationRequest
+                    requestWithIdentifier:EMA_NOTIFICATION_IDENTIFIER content:content trigger:trigger];
+            }
 
 
             [center addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
@@ -325,6 +338,8 @@
             NSString* trigger_id = [geotrigger.userInfo objectForKey:PlotGeotriggerIdentifier];
             NSString* trigger_timestamp = [NSString stringWithFormat:@"%lu", (long)NSDate.date.timeIntervalSince1970];
             NSString* trigger_name = stringContains([geotrigger.userInfo objectForKey:PlotGeotriggerName], @"generic,") ? @"generic" : [geotrigger.userInfo objectForKey:PlotGeotriggerName];
+            NSNumber* latitude = [geotrigger.userInfo objectForKey:PlotGeotriggerGeofenceLatitude];
+            NSNumber* longitude = [geotrigger.userInfo objectForKey:PlotGeotriggerGeofenceLongitude];
 
             //[standardUserDefaults setObject:trigger_timestamp forKey:@"plot.surveyTriggered"];
 
@@ -333,6 +348,8 @@
                                             trigger_timestamp, @"detection_timestamp",
                                             trigger_name, @"geotrigger_name",
                                             trigger_direction, @"geotrigger_direction",
+                                            latitude, @"latitude",
+                                            longitude, @"longitude",
                                             nil];
 
 

@@ -65,6 +65,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                     Log.d(TAG, "Handled Geotrigger name" + t.getName());//t.getGeofenceLatitude());
                     //Log.d(TAG, "    ", t.getGeofenceLongitude());
                     //Log.d(TAG, "    ", t.getName());
+                    Log.d(TAG, "    " + t.getRegionType());
                     Log.d(TAG, "   getTrigger " + t.getTrigger());
                     Log.d(TAG, "handled geotrigger --end--");
 
@@ -85,7 +86,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                             geofenceName = "generic";
                         }
 
-                        savePersistentData(ts, geofenceName, t.getId(), t.getTrigger());
+                        savePersistentData(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
                         sendNotification(t.getTrigger());
                     }
                 }
@@ -96,7 +97,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
     }
 
     // save to Ti.app.properties so the Titanium app can access this data later.
-    private static void savePersistentData(String timestamp, String name, String id, String direction){
+    private static void savePersistentData(String timestamp, String name, String id, String direction, Double latitude, Double longitude){
         TiProperties props = TiApplication.getInstance().getAppProperties();
         String propName = "plot.surveyTriggered";
 
@@ -106,6 +107,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             jsonObj.put("geotrigger_id", id);
             jsonObj.put("geotrigger_name", name);
             jsonObj.put("geotrigger_direction", direction);
+            jsonObj.put("latitude", latitude);
+            jsonObj.put("longitude", longitude);
 
             EMADataAccess.appendToJsonArray(propName, jsonObj);
         } catch(JSONException e){
@@ -117,6 +120,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
     private static void sendNotification(String direction){
 
         String notificationTitle = EMADataAccess.getStringProperty("plot.notificationTitle." + direction);
+        int dwell_time_minutes = Integer.parseInt(EMADataAccess.getStringProperty("plot.projects_dwell_minutes"));
 
         if("".equals(notificationTitle)){
             Log.e(TAG, "plot.notificationTitle." + direction + " is empty! not sending an empty notification");
@@ -138,7 +142,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         String channel_ID = "12";
 
         // for delaying the notification, set the time in the future - disabled currently
-        long scheduleTime = System.currentTimeMillis() + 2 * 60 * 1000;
+        long scheduleTime = System.currentTimeMillis() + dwell_time_minutes * 60 * 1000;
         Context context =  TiApplication.getInstance().getApplicationContext();
 
         //create notification channel
@@ -174,27 +178,31 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         builder.setContentIntent(PendingIntent.getActivity(context, 0, launchIntent, 0));
 
         // send the notification immediately? only if Dwell isn't needed.
-        // notificationManager.notify(notificationId, builder.build());
+        if(dwell_time_minutes == 0){
+            notificationManager.notify(notificationId, builder.build());
+        } else {
 
-// Dwell:
-// to delay the notification, this sets up the alarm manager to deliver the notification on a specific time.
-        //Creates the notification intent with extras
-        Intent notificationIntent = new Intent(context, EMANotificationBroadcastReceiver.class);
-        notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION_ID, notificationId);
-        notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION, builder.build());
+        // Dwell:
+        // to delay the notification, this sets up the alarm manager to deliver the notification on a specific time.
+            //Creates the notification intent with extras
+            Intent notificationIntent = new Intent(context, EMANotificationBroadcastReceiver.class);
+            notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION_ID, notificationId);
+            notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION, builder.build());
 
-        //Creates the pending intent which includes the notificationIntent
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, notificationIntent, 0);
+            //Creates the pending intent which includes the notificationIntent
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, notificationIntent, 0);
 
-        try{
-            Log.d(TAG, context.toString());
+            try{
+                Log.d(TAG, context.toString());
 
-            AlarmManager am = (AlarmManager)context.getSystemService(TiApplication.ALARM_SERVICE);
-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, scheduleTime, pendingIntent);
+                AlarmManager am = (AlarmManager)context.getSystemService(TiApplication.ALARM_SERVICE);
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, scheduleTime, pendingIntent);
 
-        } catch (Exception e) {
-            Log.e(TAG, "setting alarm manager for dwell notification for a geotrigger failed.");
-            Log.e(TAG, e.toString());
+            } catch (Exception e) {
+                Log.e(TAG, "setting alarm manager for dwell notification for a geotrigger failed.");
+                Log.e(TAG, e.toString());
+            }
+
         }
     }
 
