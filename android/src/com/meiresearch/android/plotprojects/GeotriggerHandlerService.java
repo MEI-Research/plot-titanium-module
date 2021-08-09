@@ -58,6 +58,9 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                 List<Geotrigger> triggers = batch.getGeotriggers();
                 Geotrigger t;
 
+                // limit how often these can fire. which improves preformance of EMA due to less data to process.
+                Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
+
                 for(int i = 0; i < triggers.size(); i++){
                     t = triggers.get(i);
                     //Log.d("Handled Geotrigger", triggers[i].getGeofenceLatitude(), triggers[i].getGeofenceLongitude(), triggers[i].getName(), triggers[i].getTrigger());
@@ -76,23 +79,58 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                     //     continue;
                     // }
 
-                    Long tsLong = System.currentTimeMillis()/1000l;
-                    String ts = tsLong.toString();
-                    String geofenceName = t.getName();
+                    // if an exit trigger is being checked, we should allow the processing of that.
+                    // if we're finally processing after a reasonable delay an entry trigger, allow that.
+                    // disallow too frequent of processing of enter triggers.
+                    if(enteredFrequencyAllowed == true || "exit".equals(t.getTrigger()) == true){
+                        Long tsLong = System.currentTimeMillis()/1000l;
+                        String ts = tsLong.toString();
+                        String geofenceName = t.getName();
 
-                    if(EMAFilterRegion.regionAllowed(geofenceName)){
-                        // for healthkick, we have to test regions and ensure consistent 'generic' naming of a region.
-                        if(geofenceName.indexOf("generic,") == 0){
-                            geofenceName = "generic";
+                        if(EMAFilterRegion.regionAllowed(geofenceName)){
+                            // for healthkick, we have to test regions and ensure consistent 'generic' naming of a region.
+                            if(geofenceName.indexOf("generic,") == 0){
+                                geofenceName = "generic";
+                            }
+
+                            savePersistentData(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
+                            sendNotification(t.getTrigger());
                         }
-
-                        savePersistentData(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
-                        sendNotification(t.getTrigger());
                     }
                 }
 
+
                 batch.markGeotriggersHandled(triggers);
             }
+        }
+    }
+
+    // return true if this batch of triggers should be iterated over and worked on, based on time filtering.
+    // otherwise return false if the last time this function was called was too soon.
+    private static Boolean reduceBLETriggerFrequency(){
+        TiProperties props = TiApplication.getInstance().getAppProperties();
+        String propName = "plot.reduceBLETriggerFrequency";
+        Long thresholdMillis = 2 * 60 * 1000l;
+        Long currentTimeMillis = System.currentTimeMillis();
+
+        try{
+            Long lastTimeMillis = Long.valueOf(EMADataAccess.getStringProperty(propName));
+
+            if(lastTimeMillis != null && (currentTimeMillis - lastTimeMillis) > thresholdMillis){
+                EMADataAccess.saveStringProperty(propName, String.valueOf(currentTimeMillis));
+
+                // Log.w(TAG, "vance not null and over threshold");
+                return true;
+            }
+
+            // Log.w(TAG, "vance null or under threshold");
+            return false;
+
+        }catch (NumberFormatException e){
+            // Log.w(TAG, "vance exception thrown");
+            // no property set. set it up! this means it's a first time event and as such we should return true.
+            EMADataAccess.saveStringProperty(propName, String.valueOf(currentTimeMillis));
+            return true;
         }
     }
 
