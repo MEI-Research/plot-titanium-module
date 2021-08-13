@@ -36,7 +36,8 @@ import android.util.Log;
 import ti.modules.titanium.android.TiBroadcastReceiver;
 import android.content.BroadcastReceiver;
 import android.app.AlarmManager;
-import android.location.Location;
+import android.location.*;
+import android.app.Service;
 
 import android.widget.Toast;
 import android.R;
@@ -60,13 +61,33 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
                 // limit how often these can fire. which improves preformance of EMA due to less data to process.
                 Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
+                LocationManager locationManager;
+                Location location;
+
+                try {
+                        locationManager = (LocationManager) context.getSystemService(context.LOCATION_SERVICE);
+                        location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        if (location != null) {
+                            Log.d(TAG, "Location lat:" + location.getLatitude());
+                            Log.d(TAG, "Location lon:" + location.getLongitude());
+                            Log.d(TAG, "-- end  -- ");
+                        } else {
+                            Log.d(TAG, "Location Null");
+                        }
+
+                } catch (SecurityException e) {
+                    Log.e(TAG, "security exception, is the LOCATION permission allowed?");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
                 for(int i = 0; i < triggers.size(); i++){
                     t = triggers.get(i);
                     //Log.d("Handled Geotrigger", triggers[i].getGeofenceLatitude(), triggers[i].getGeofenceLongitude(), triggers[i].getName(), triggers[i].getTrigger());
                     Log.d(TAG, "Handled Geotrigger id" + t.getId());
-                    Log.d(TAG, "Handled Geotrigger name" + t.getName());//t.getGeofenceLatitude());
-                    //Log.d(TAG, "    ", t.getGeofenceLongitude());
+                    Log.d(TAG, "Handled Geotrigger name" + t.getName());
+                    Log.d(TAG, "  lat" + t.getGeofenceLatitude());
+                    Log.d(TAG, "  lon" + t.getGeofenceLongitude());
                     //Log.d(TAG, "    ", t.getName());
                     Log.d(TAG, "    " + t.getRegionType());
                     Log.d(TAG, "   getTrigger " + t.getTrigger());
