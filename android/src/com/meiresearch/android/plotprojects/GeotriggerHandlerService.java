@@ -52,78 +52,81 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "Geofence triggered!");
+        if (!GeotriggerHandlerUtil.isGeotriggerHandlerBroadcastReceiverIntent(context, intent))
+            return;
 
-        if (GeotriggerHandlerUtil.isGeotriggerHandlerBroadcastReceiverIntent(context, intent)) {
-            GeotriggerHandlerUtil.Batch batch = GeotriggerHandlerUtil.getBatch(intent, context);
-            if (batch != null) {
-                List<Geotrigger> triggers = batch.getGeotriggers();
-                Geotrigger t;
+        GeotriggerHandlerUtil.Batch batch = GeotriggerHandlerUtil.getBatch(intent, context);
+        if (batch == null)
+            return;
 
-                // limit how often these can fire. which improves preformance of EMA due to less data to process.
-                Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
-                LocationManager locationManager;
-                Location location;
+        List<Geotrigger> triggers = batch.getGeotriggers();
+        Geotrigger t;
 
-                try {
-                        locationManager = (LocationManager) context.getSystemService(context.LOCATION_SERVICE);
-                        location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                        if (location != null) {
-                            Log.d(TAG, "Location lat:" + location.getLatitude());
-                            Log.d(TAG, "Location lon:" + location.getLongitude());
-                            Log.d(TAG, "-- end  -- ");
-                        } else {
-                            Log.d(TAG, "Location Null");
-                        }
+        // limit how often these can fire. which improves preformance of EMA due to less data to process.
+        Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
+        LocationManager locationManager;
+        Location location;
 
-                } catch (SecurityException e) {
-                    Log.e(TAG, "security exception, is the LOCATION permission allowed?");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        try {
+            locationManager = (LocationManager) context.getSystemService(context.LOCATION_SERVICE);
+            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location != null) {
+                Log.d(TAG, "Location lat:" + location.getLatitude());
+                Log.d(TAG, "Location lon:" + location.getLongitude());
+                Log.d(TAG, "-- end  -- ");
+            } else {
+                Log.d(TAG, "Location Null");
+            }
 
-                for(int i = 0; i < triggers.size(); i++){
-                    t = triggers.get(i);
-                    //Log.d("Handled Geotrigger", triggers[i].getGeofenceLatitude(), triggers[i].getGeofenceLongitude(), triggers[i].getName(), triggers[i].getTrigger());
-                    Log.d(TAG, "Handled Geotrigger id" + t.getId());
-                    Log.d(TAG, "Handled Geotrigger name" + t.getName());
-                    Log.d(TAG, "  lat" + t.getGeofenceLatitude());
-                    Log.d(TAG, "  lon" + t.getGeofenceLongitude());
-                    //Log.d(TAG, "    ", t.getName());
-                    Log.d(TAG, "    " + t.getRegionType());
-                    Log.d(TAG, "   getTrigger " + t.getTrigger());
-                    Log.d(TAG, "handled geotrigger --end--");
+        } catch (SecurityException e) {
+            Log.e(TAG, "security exception, is the LOCATION permission allowed?");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-                    // enabling Dwell again. uncomment to disable Dwell feature.
-                    // if("exit".equals(t.getTrigger())){
-                    //     // disabling exit triggers for recent testing.
-                    //     Log.d(TAG, " exit trigger, not attempting to notify - exits disabled");
-                    //     continue;
-                    // }
+        for(int i = 0; i < triggers.size(); i++){
+            t = triggers.get(i);
+            //Log.d("Handled Geotrigger", triggers[i].getGeofenceLatitude(), triggers[i].getGeofenceLongitude(), triggers[i].getName(), triggers[i].getTrigger());
+            Log.d(TAG, "Handled Geotrigger id" + t.getId());
+            Log.d(TAG, "Handled Geotrigger name" + t.getName());
+            Log.d(TAG, "  lat" + t.getGeofenceLatitude());
+            Log.d(TAG, "  lon" + t.getGeofenceLongitude());
+            //Log.d(TAG, "    ", t.getName());
+            Log.d(TAG, "    " + t.getRegionType());
+            Log.d(TAG, "   getTrigger " + t.getTrigger());
+            Log.d(TAG, "handled geotrigger --end--");
 
-                    // if an exit trigger is being checked, we should allow the processing of that.
-                    // if we're finally processing after a reasonable delay an entry trigger, allow that.
-                    // disallow too frequent of processing of enter triggers.
-                    if(enteredFrequencyAllowed == true || "exit".equals(t.getTrigger()) == true){
-                        Long tsLong = System.currentTimeMillis()/1000l;
-                        String ts = tsLong.toString();
-                        String geofenceName = t.getName();
+            // enabling Dwell again. uncomment to disable Dwell feature.
+            // if("exit".equals(t.getTrigger())){
+            //     // disabling exit triggers for recent testing.
+            //     Log.d(TAG, " exit trigger, not attempting to notify - exits disabled");
+            //     continue;
+            // }
 
-                        if(EMAFilterRegion.regionAllowed(geofenceName)){
-                            // for healthkick, we have to test regions and ensure consistent 'generic' naming of a region.
-                            if(geofenceName.indexOf("generic,") == 0){
-                                geofenceName = "generic";
-                            }
+            // if an exit trigger is being checked, we should allow the processing of that.
+            // if we're finally processing after a reasonable delay an entry trigger, allow that.
+            // disallow too frequent of processing of enter triggers.
+            if(enteredFrequencyAllowed == true || "exit".equals(t.getTrigger())){
+                Long tsLong = System.currentTimeMillis()/1000l;
+                String ts = tsLong.toString();
+                String geofenceName = t.getName();
 
-                            savePersistentData(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
-                            sendNotification(t.getTrigger());
-                        }
+                if(EMAFilterRegion.regionAllowed(geofenceName)){
+                    // for healthkick, we have to test regions and ensure consistent 'generic' naming of a region.
+                    if(geofenceName.indexOf("generic,") == 0){
+                        geofenceName = "generic";
                     }
+
+                    savePersistentData(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
+                    sendNotification(t.getTrigger());
                 }
-
-
-                batch.markGeotriggersHandled(triggers);
             }
         }
+
+
+        batch.markGeotriggersHandled(triggers);
+
+
     }
 
     // return true if this batch of triggers should be iterated over and worked on, based on time filtering.
