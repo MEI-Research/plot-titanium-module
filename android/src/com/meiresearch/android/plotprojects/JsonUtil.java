@@ -63,7 +63,7 @@ public final class JsonUtil {
 	}
 	
 	public static HashMap<String, Object>[] notificationsToMap(List<FilterableNotification> notifications) {
-		HashMap<String, Object>[] result = new HashMap[notifications.size()];
+		HashMap<String, Object>[] result = (HashMap<String, Object>[])new Object[notifications.size()];
 		int i = 0;
 		for (FilterableNotification notification : notifications) {
 			result[i] = notificationToMap(notification);
@@ -128,7 +128,7 @@ public final class JsonUtil {
 	}
 	
 	public static HashMap<String, Object>[] geotriggersToMap(List<Geotrigger> geotriggers) {
-		HashMap<String, Object>[] result = new HashMap[geotriggers.size()];
+		HashMap<String, Object>[] result = (HashMap<String, Object>[])new Object[geotriggers.size()];
 		int i = 0;
 		for (Geotrigger geotrigger : geotriggers) {
 			result[i] = geotriggerToMap(geotrigger);
@@ -190,7 +190,7 @@ public final class JsonUtil {
 	}
 	
 	public static HashMap<String, Object>[] notificationTriggersToMap(List<NotificationTrigger> notifications) {
-		HashMap<String, Object>[] result = new HashMap[notifications.size()];
+		HashMap<String, Object>[] result = (HashMap<String, Object>[])new Object[notifications.size()];
 		int i = 0;
 		for (NotificationTrigger notification : notifications) {
 			result[i] = notificationTriggerToMap(notification);
@@ -226,7 +226,7 @@ public final class JsonUtil {
 	}
 	
 	public static HashMap<String, Object>[] sentNotificationsToMap(List<SentNotification> notifications) {
-		HashMap<String, Object>[] result = new HashMap[notifications.size()];
+		HashMap<String, Object>[] result = (HashMap<String, Object>[])new Object[notifications.size()];
 		int i = 0;
 		for (SentNotification notification : notifications) {
 			result[i] = sentNotificationToMap(notification);
@@ -260,7 +260,7 @@ public final class JsonUtil {
 	}
 	
 	public static HashMap<String, Object>[] sentGeotriggersToMap(List<SentGeotrigger> geotriggers) {
-		HashMap<String, Object>[] result = new HashMap[geotriggers.size()];
+		HashMap<String, Object>[] result = (HashMap<String, Object>[])new Object[geotriggers.size()];
 		int i = 0;
 		for (SentGeotrigger geotrigger : geotriggers) {
 			result[i] = sentGeotriggerToMap(geotrigger);

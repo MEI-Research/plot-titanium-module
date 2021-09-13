@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/plotProject.iml" filepath="$PROJECT_DIR$/.idea/plotProject.iml" group="plotProject" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plot-titanium-module.iml" filepath="$PROJECT_DIR$/.idea/modules/plot-titanium-module.iml" />
     </modules>
   </component>
 </project>

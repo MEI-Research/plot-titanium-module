@@ -2,13 +2,12 @@ package com.meiresearch.android.plotprojects;
 
 public class EMAFilterRegion {
 
-    private static String custom_healthkick = "custom_healthkick";
+    private static final String CUSTOM_HEALTHKICK = "custom_healthkick";
 
     // return true if region is allowed.
     // return false if region isn't allowed.
     // this is designed for a corner case with healthkick to filter out some combination region names.
     public static boolean regionAllowed(String region_name){
-        String pp_val = EMADataAccess.getStringProperty("plotProjects.project");
 
         if(region_name.toLowerCase().indexOf("generic,") == 0){
             return true;
@@ -19,7 +18,8 @@ public class EMAFilterRegion {
             return false;
         }
 
-        if(pp_val.equals(custom_healthkick)){
+        String pp_val = EMADataAccess.getStringProperty("plotProjects.project");
+        if(pp_val.equals(CUSTOM_HEALTHKICK)){
             return healthkickFilter(region_name);
         }
 

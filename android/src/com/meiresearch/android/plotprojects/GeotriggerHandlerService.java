@@ -15,11 +15,11 @@
  */
 package com.meiresearch.android.plotprojects;
 
+import mei.ble.Encounter;
 import com.plotprojects.retail.android.GeotriggerHandlerUtil;
-import com.plotprojects.retail.android.GeotriggerHandlerUtil.Batch;
 import com.plotprojects.retail.android.Geotrigger;
-import com.plotprojects.retail.android.GeotriggerHandlerBroadcastReceiver;
 
+import mei.ble.GeotriggerAdapter;
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
 
@@ -37,10 +37,10 @@ import ti.modules.titanium.android.TiBroadcastReceiver;
 import android.content.BroadcastReceiver;
 import android.app.AlarmManager;
 import android.location.*;
-import android.app.Service;
 
-import android.widget.Toast;
 import android.R;
+
+import java.time.Instant;
 import java.util.List;
 
 import org.json.*;
@@ -50,8 +50,17 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
     private static final String TAG = "GeotriggerHandlerService";
 
+    // Ti App Properties
+    public static final String REDUCE_BLETRIGGER_FREQUENCY = "plot.reduceBLETriggerFrequency";
+    public static final String SURVEY_TRIGGERED = "plot.surveyTriggered";
+    public static final String DWELL_MINUTES = "plot.projects_dwell_minutes";
+
     public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "Geofence triggered!");
+        Instant eventTime = Instant.now();
+        Log.d(TAG, "Geofence triggered at " + eventTime.toString());
+
+        Encounter.updateAllForPassedTime(eventTime);
+
         if (!GeotriggerHandlerUtil.isGeotriggerHandlerBroadcastReceiverIntent(context, intent))
             return;
 
@@ -60,41 +69,82 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             return;
 
         List<Geotrigger> triggers = batch.getGeotriggers();
-        Geotrigger t;
-
-        // limit how often these can fire. which improves preformance of EMA due to less data to process.
-        Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
-        LocationManager locationManager;
-        Location location;
-
-        try {
-            locationManager = (LocationManager) context.getSystemService(context.LOCATION_SERVICE);
-            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (location != null) {
-                Log.d(TAG, "Location lat:" + location.getLatitude());
-                Log.d(TAG, "Location lon:" + location.getLongitude());
-                Log.d(TAG, "-- end  -- ");
-            } else {
-                Log.d(TAG, "Location Null");
+        for (Geotrigger geotrigger: triggers) {
+            Log.d(TAG,
+                    "DEBUG### handle geotrigger:" +
+                            " Id="+                geotrigger.getId() +
+                            ", Name="+             geotrigger.getName() +
+//                            ", Data="+             geotrigger.getData() +
+//                            ", DwellingMinutes="+  geotrigger.getDwellingMinutes() +
+//                            ", GeofenceLatitude="+ geotrigger.getGeofenceLatitude() +
+                            ", GeofenceLongitude="+geotrigger.getGeofenceLongitude() +
+                            ", InternalId="+       geotrigger.getInternalId() +
+                            ", MatchId="+          geotrigger.getMatchId() +
+                            ", MatchRange="+       geotrigger.getMatchRange() +
+                            ", RegionId="+         geotrigger.getRegionId() +
+                            ", RegionType="+       geotrigger.getRegionType() +
+                            ", ShortId="+          geotrigger.getShortId() +
+                            ", Trigger="+          geotrigger.getTrigger() +
+                            ", TriggerProperties="+geotrigger.getTriggerProperties());
+            GeotriggerAdapter geotrigAdapt = new GeotriggerAdapter(geotrigger);
+            if (geotrigAdapt.isBeaconEnter()) {
+                Encounter.handleGeotrigger(geotrigAdapt, eventTime);
             }
-
-        } catch (SecurityException e) {
-            Log.e(TAG, "security exception, is the LOCATION permission allowed?");
-        } catch (Exception e) {
-            e.printStackTrace();
+            // TODO: handle geofence triggers
         }
 
+        batch.markGeotriggersHandled(triggers);
+        Log.d(TAG, "DEBUG######### markGeotriggersHandled happened:");
+
+        // Skip geofence stuff
+        return;
+    /*
+
+        // limit how often these can fire. which improves preformance of EMA due to less data to process.
+            Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
+
+        // We do not need to get location anymore
+//        Location location;
+//        try {
+//            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+//            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//            if (location != null) {
+//                Log.d(TAG, "Location lat:" + location.getLatitude());
+//                Log.d(TAG, "Location lon:" + location.getLongitude());
+//                Log.d(TAG, "-- end  -- ");
+//            } else {
+//                Log.d(TAG, "Location Null");
+//            }
+//
+//        } catch (SecurityException e) {
+//            Log.e(TAG, "security exception, is the LOCATION permission allowed?");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
         for(int i = 0; i < triggers.size(); i++){
-            t = triggers.get(i);
-            //Log.d("Handled Geotrigger", triggers[i].getGeofenceLatitude(), triggers[i].getGeofenceLongitude(), triggers[i].getName(), triggers[i].getTrigger());
-            Log.d(TAG, "Handled Geotrigger id" + t.getId());
-            Log.d(TAG, "Handled Geotrigger name" + t.getName());
-            Log.d(TAG, "  lat" + t.getGeofenceLatitude());
-            Log.d(TAG, "  lon" + t.getGeofenceLongitude());
-            //Log.d(TAG, "    ", t.getName());
-            Log.d(TAG, "    " + t.getRegionType());
-            Log.d(TAG, "   getTrigger " + t.getTrigger());
-            Log.d(TAG, "handled geotrigger --end--");
+            Geotrigger t = triggers.get(i);
+
+            Log.d("Handled Geotrigger", t.toString());
+
+
+            // All of the properties of the geotrigger (aka Enter Event)
+            Log.d(TAG,
+                  "handle geotrigger:" +
+                  " Id="+               t.getId() +
+                  ", Name="+             t.getName() +
+                  ", Data="+             t.getData() +
+                  ", DwellingMinutes="+  t.getDwellingMinutes() +
+                  ", GeofenceLatitude="+ t.getGeofenceLatitude() +
+                  ", GeofenceLongitude="+t.getGeofenceLongitude() +
+                  ", InternalId="+       t.getInternalId() +
+                  ", MatchId="+          t.getMatchId() +
+                  ", MatchRange="+       t.getMatchRange() +
+                  ", RegionId="+         t.getRegionId() +
+                  ", RegionType="+       t.getRegionType() +
+                  ", ShortId="+          t.getShortId() +
+                  ", Trigger="+          t.getTrigger() +
+                  ", TriggerProperties="+t.getTriggerProperties());
+
 
             // enabling Dwell again. uncomment to disable Dwell feature.
             // if("exit".equals(t.getTrigger())){
@@ -117,7 +167,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                         geofenceName = "generic";
                     }
 
-                    savePersistentData(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
+                    sendEventToEMA(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
                     sendNotification(t.getTrigger());
                 }
             }
@@ -125,23 +175,20 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
 
         batch.markGeotriggersHandled(triggers);
-
-
+      */
     }
 
     // return true if this batch of triggers should be iterated over and worked on, based on time filtering.
     // otherwise return false if the last time this function was called was too soon.
     private static Boolean reduceBLETriggerFrequency(){
-        TiProperties props = TiApplication.getInstance().getAppProperties();
-        String propName = "plot.reduceBLETriggerFrequency";
         Long thresholdMillis = 2 * 60 * 1000l;
         Long currentTimeMillis = System.currentTimeMillis();
 
         try{
-            Long lastTimeMillis = Long.valueOf(EMADataAccess.getStringProperty(propName));
+            Long lastTimeMillis = Long.valueOf(EMADataAccess.getStringProperty(REDUCE_BLETRIGGER_FREQUENCY));
 
             if(lastTimeMillis != null && (currentTimeMillis - lastTimeMillis) > thresholdMillis){
-                EMADataAccess.saveStringProperty(propName, String.valueOf(currentTimeMillis));
+                EMADataAccess.saveStringProperty(REDUCE_BLETRIGGER_FREQUENCY, String.valueOf(currentTimeMillis));
 
                 // Log.w(TAG, "vance not null and over threshold");
                 return true;
@@ -153,15 +200,24 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         }catch (NumberFormatException e){
             // Log.w(TAG, "vance exception thrown");
             // no property set. set it up! this means it's a first time event and as such we should return true.
-            EMADataAccess.saveStringProperty(propName, String.valueOf(currentTimeMillis));
+            EMADataAccess.saveStringProperty(REDUCE_BLETRIGGER_FREQUENCY, String.valueOf(currentTimeMillis));
             return true;
         }
     }
 
-    // save to Ti.app.properties so the Titanium app can access this data later.
-    private static void savePersistentData(String timestamp, String name, String id, String direction, Double latitude, Double longitude){
+    /**
+     * Queue an event for the javascript engine to handle.
+     * Uses a Titanium App property for persistence.  Javascript will poll the property
+     *
+     * @param timestamp
+     * @param name
+     * @param id
+     * @param direction
+     * @param latitude
+     * @param longitude
+     */
+     public static void sendEventToEMA(String timestamp, String name, String id, String direction, Double latitude, Double longitude){
         TiProperties props = TiApplication.getInstance().getAppProperties();
-        String propName = "plot.surveyTriggered";
 
         try{
             JSONObject jsonObj = new JSONObject();
@@ -172,17 +228,18 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             jsonObj.put("latitude", latitude);
             jsonObj.put("longitude", longitude);
 
-            EMADataAccess.appendToJsonArray(propName, jsonObj);
+            EMADataAccess.appendToJsonArray(SURVEY_TRIGGERED, jsonObj);
         } catch(JSONException e){
             Log.e(TAG, "error getting notification details");
             e.printStackTrace();
         }
     }
 
-    private static void sendNotification(String direction){
-
+     public static void sendNotification(String direction){
+        Log.i(TAG, "sendNotification: " + direction);
         String notificationTitle = EMADataAccess.getStringProperty("plot.notificationTitle." + direction);
-        int dwell_time_minutes = Integer.parseInt(EMADataAccess.getStringProperty("plot.projects_dwell_minutes"));
+        // TODO: don't need dwell for BLE
+        int dwell_time_minutes = 0; //Integer.parseInt(EMADataAccess.getStringProperty(DWELL_MINUTES));
 
         if("".equals(notificationTitle)){
             Log.e(TAG, "plot.notificationTitle." + direction + " is empty! not sending an empty notification");
@@ -201,7 +258,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         String notifyChannelName = "EMA Plot Location";
         String notifyChannelDesc = "Location based notifications";
         String groupName = "ema_plot_loc";
-        String channel_ID = "12";
+        String channel_ID = EMANotificationBroadcastReceiver.PRIMARY_CHANNEL_ID;
 
         // for delaying the notification, set the time in the future - disabled currently
         long scheduleTime = System.currentTimeMillis() + dwell_time_minutes * 60 * 1000;
@@ -240,31 +297,31 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         builder.setContentIntent(PendingIntent.getActivity(context, 0, launchIntent, 0));
 
         // send the notification immediately? only if Dwell isn't needed.
-        if(dwell_time_minutes == 0){
-            notificationManager.notify(notificationId, builder.build());
-        } else {
+         Log.d(TAG, "Notify!!!!!");
+         try {
+            if(dwell_time_minutes == 0){
+                notificationManager.notify(notificationId, builder.build());
+            } else {
 
-        // Dwell:
-        // to delay the notification, this sets up the alarm manager to deliver the notification on a specific time.
-            //Creates the notification intent with extras
-            Intent notificationIntent = new Intent(context, EMANotificationBroadcastReceiver.class);
-            notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION_ID, notificationId);
-            notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION, builder.build());
+            // Dwell:
+            // to delay the notification, this sets up the alarm manager to deliver the notification on a specific time.
+                //Creates the notification intent with extras
+                Intent notificationIntent = new Intent(context, EMANotificationBroadcastReceiver.class);
+                notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION_ID, notificationId);
+                notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION, builder.build());
 
-            //Creates the pending intent which includes the notificationIntent
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, notificationIntent, 0);
+                //Creates the pending intent which includes the notificationIntent
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, notificationIntent, 0);
 
-            try{
                 Log.d(TAG, context.toString());
 
                 AlarmManager am = (AlarmManager)context.getSystemService(TiApplication.ALARM_SERVICE);
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, scheduleTime, pendingIntent);
 
-            } catch (Exception e) {
-                Log.e(TAG, "setting alarm manager for dwell notification for a geotrigger failed.");
-                Log.e(TAG, e.toString());
             }
-
+         } catch (Exception e) {
+             Log.e(TAG, "setting alarm manager for dwell notification for a geotrigger failed.");
+             Log.e(TAG, e.toString());
         }
     }
 

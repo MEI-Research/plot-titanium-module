@@ -2,7 +2,10 @@
 # this is your module manifest and used by Titanium
 # during compilation, packaging, distribution, etc.
 #
-version: 1.0.9
+# IMPORTANT: after committing a version to *any* EMA branch, tag this repo &
+# increment the version number.  Otherwise we will not know what commit EMA is using.
+#
+version: 1.1.0
 apiversion: 4
 architectures: arm64-v8a armeabi-v7a x86 x86_64
 description: com.meiresearch.android.plotprojects
