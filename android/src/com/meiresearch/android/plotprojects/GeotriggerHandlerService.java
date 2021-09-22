@@ -87,7 +87,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                             ", Trigger="+          geotrigger.getTrigger() +
                             ", TriggerProperties="+geotrigger.getTriggerProperties());
             GeotriggerAdapter geotrigAdapt = new GeotriggerAdapter(geotrigger);
-            if (geotrigAdapt.isBeaconEnter()) {
+            if (geotrigAdapt.isBeaconEvent()) {
                 Encounter.handleGeotrigger(geotrigAdapt, eventTime);
             }
             // TODO: handle geofence triggers

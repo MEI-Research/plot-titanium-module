@@ -34,11 +34,14 @@ public final class GeotriggerAdapter {
 //        friendCode = nameParts[3];
     }
 
+    public boolean isBeaconEvent() {
+        return nameParts.length >= 5 && nameParts[0].equals("beacon");
+    }
     public boolean isBeaconEnter() {
-
-        return (nameParts.length >= 5
-                && nameParts[0].equals("beacon")
-                && geotrigger.getTrigger().equals("enter"));
+        return isBeaconEvent() && geotrigger.getTrigger().equals("enter");
+    }
+    public boolean isBeaconExit() {
+        return isBeaconEvent() && geotrigger.getTrigger().equals("exit");
     }
     public String kontactBeaconId() {
         return nameParts[1];
