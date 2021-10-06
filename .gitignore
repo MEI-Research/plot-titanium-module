@@ -14,3 +14,4 @@ tmp/
 .gradle/
 plotprojects-example/platforms/*
 plotprojects-example/modules/*
+local.properties
