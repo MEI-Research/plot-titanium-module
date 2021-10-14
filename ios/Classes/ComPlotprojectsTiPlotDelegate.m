@@ -190,17 +190,9 @@
              //[result setObject:geotrigger forKey:identifier];
              NSLog(@"PlotProjects - trigger %@", trigger);
 
-            if([trigger isEqualToString:PlotGeotriggerTriggerEnter]){
-                NSLog(@"PlotProjects - ENTERED geotrigger");
-                trigger_direction = @"enter";
-            }
-            if([trigger isEqualToString:PlotGeotriggerTriggerExit]){
-                NSLog(@"PlotProjects - EXIT geotrigger");
-                trigger_direction = @"exit";
-            }
-
             if([self emaFilterRegionAllowed:trigger_direction geotrigger:geotrigger]){
-                [self sendEMANotification:trigger_direction geotrigger:geotrigger];
+                [self enqueueGeotrigger:geotrigger];
+                [self notifyAbout:[self directionForGeotrigger:geotrigger]];
             }
         }
     }
@@ -210,6 +202,16 @@
     } else {
         [geotriggersToHandleQueued addObject:geotriggers];
     }
+}
+
+-(NSString*)directionForGeotrigger:(NSString*)dir {
+    if([dir isEqualToString:PlotGeotriggerTriggerEnter]){
+        return @"enter";
+    }
+    if([dir isEqualToString:PlotGeotriggerTriggerExit]){
+        return @"exit";
+    }
+    return nil;
 }
 
 // filter out the custom list for HealthKick and let everything else pass.
@@ -277,81 +279,95 @@
     return false;
 }
 
--(void)sendEMANotification:(NSString*)trigger_direction geotrigger:(PlotGeotrigger*)geotrigger {
+-(void)notifyAbout:(NSString*)direction {
     NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
-    NSString *notText;
+    if (standardUserDefaults == nil)
+        return;
+    
+    // Enqueue geotrigger event for EMA
     // NSTimeInterval notTimeDelay = (2.0 * 60.0);
 
-    if (standardUserDefaults) {
-        NSString* EMA_NOTIFICATION_IDENTIFIER = @"plotproject.ema.notify";
-        // NSArray* PENDING_NOTIFICATION_IDS = [NSArray arrayWithObjects:EMA_NOTIFICATION_IDENTIFIER];
-        NSString* persistentProperty = [NSString stringWithFormat:@"plot.notificationTitle.%@", trigger_direction];
-        NSString* customNotTitlePersistent = [standardUserDefaults stringForKey:persistentProperty];
+    NSString* EMA_NOTIFICATION_IDENTIFIER = @"plotproject.ema.notify";
+    // NSArray* PENDING_NOTIFICATION_IDS = [NSArray arrayWithObjects:EMA_NOTIFICATION_IDENTIFIER];
+    NSString* key = [NSString stringWithFormat:@"plot.notificationTitle.%@", direction];
+    NSString* customNotTitlePersistent = [standardUserDefaults stringForKey:key];
 
-        if(customNotTitlePersistent != nil && ![@"" isEqualToString:customNotTitlePersistent]){
-            UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
+    if(customNotTitlePersistent == nil || [@"" isEqualToString:customNotTitlePersistent])
+        return;
 
-            // for dwell, remove any pending notifications before sending this one.
-            // [center removePendingNotificationRequestsWithIdentifiers:PENDING_NOTIFICATION_IDS];
-            notText = [standardUserDefaults stringForKey:@"plot.notificationText"];
+    UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
 
-            //notification code to notify location change
-            UNMutableNotificationContent* content = [[UNMutableNotificationContent alloc] init];
-            content.title = [NSString localizedUserNotificationStringForKey:customNotTitlePersistent arguments:nil];
-            content.body = [NSString localizedUserNotificationStringForKey:notText arguments:nil];
-            content.sound = [UNNotificationSound defaultSound];
+    // for dwell, remove any pending notifications before sending this one.
+    // [center removePendingNotificationRequestsWithIdentifiers:PENDING_NOTIFICATION_IDS];
 
-            // Configure the trigger after n*60 seconds
-            // UNTimeIntervalNotificationTrigger* trigger = [UNTimeIntervalNotificationTrigger
-                         // triggerWithTimeInterval:notTimeDelay repeats: NO];
+    //notification code to notify location change
+    NSString *notText = [standardUserDefaults stringForKey:@"plot.notificationText"];
+    UNMutableNotificationContent* content = [[UNMutableNotificationContent alloc] init];
+    content.title = [NSString localizedUserNotificationStringForKey:customNotTitlePersistent arguments:nil];
+    content.body = [NSString localizedUserNotificationStringForKey:notText arguments:nil];
+    content.sound = [UNNotificationSound defaultSound];
 
-            // Create the request object.
-            UNNotificationRequest* request = [UNNotificationRequest
-                requestWithIdentifier:EMA_NOTIFICATION_IDENTIFIER content:content trigger:nil];
+    // Configure the trigger after n*60 seconds
+    // UNTimeIntervalNotificationTrigger* trigger = [UNTimeIntervalNotificationTrigger
+    // triggerWithTimeInterval:notTimeDelay repeats: NO];
 
-
-            [center addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
-                if (error != nil) {
-                   NSLog(@"PlotProjects - %@", error.localizedDescription);
-                }
-
-                NSLog(@"PlotProjects - notification scheduled");
-            }];
-
-            // detection_timestamp
-            // geotrigger_id
-            // geotrigger_name
-            // geotrigger_direction
-            NSString* trigger_id = [geotrigger.userInfo objectForKey:PlotGeotriggerIdentifier];
-            NSString* trigger_timestamp = [NSString stringWithFormat:@"%lu", (long)NSDate.date.timeIntervalSince1970];
-            NSString* trigger_name = stringContains([geotrigger.userInfo objectForKey:PlotGeotriggerName], @"generic,") ? @"generic" : [geotrigger.userInfo objectForKey:PlotGeotriggerName];
-
-            //[standardUserDefaults setObject:trigger_timestamp forKey:@"plot.surveyTriggered"];
-
-            NSDictionary *jsonDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
-                                            trigger_id, @"geotrigger_id",
-                                            trigger_timestamp, @"detection_timestamp",
-                                            trigger_name, @"geotrigger_name",
-                                            trigger_direction, @"geotrigger_direction",
-                                            nil];
+    // Create the request object.
+    UNNotificationRequest* request = [UNNotificationRequest
+                                             requestWithIdentifier:EMA_NOTIFICATION_IDENTIFIER content:content trigger:nil];
 
 
-            NSMutableArray * arr = [[NSMutableArray alloc] init];
+    [center addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
+            if (error != nil) {
+                NSLog(@"PlotProjects - %@", error.localizedDescription);
+            }
 
-            [arr addObject:jsonDictionary];
-            NSData *jsonData2 = [NSJSONSerialization dataWithJSONObject:arr options:NSJSONWritingPrettyPrinted error:nil];
-            NSString *jsonString = [[NSString alloc] initWithData:jsonData2 encoding:NSUTF8StringEncoding];
-            NSLog(@"jsonData as string:\n%@", jsonString);
-
-            [standardUserDefaults setObject:jsonString forKey:@"plot.surveyTriggered"];
-
-            [standardUserDefaults synchronize];
-
-            NSLog(@"PlotProjects - .fired event ComPlotprojectsTiModule");
-        }
-    }
+            NSLog(@"PlotProjects - notification scheduled");
+        }];
 }
 
+/** Enqueue geotrigger event for EMA */
+-(void)enqueueGeotrigger:(PlotGeotrigger*)geotrigger {
+    NSUserDefaults *standardUserDefaults = [NSUserDefaults standardUserDefaults];
+    if (standardUserDefaults == nil)
+        return;
+    
+    // NSTimeInterval notTimeDelay = (2.0 * 60.0);
+
+
+    // detection_timestamp
+    // geotrigger_id
+    // geotrigger_name
+    // geotrigger_direction
+    NSString* trigger_id = [geotrigger.userInfo objectForKey:PlotGeotriggerIdentifier];
+    NSString* trigger_timestamp = [NSString stringWithFormat:@"%lu", (long)NSDate.date.timeIntervalSince1970];
+    NSString* trigger_name =
+        stringContains([geotrigger.userInfo objectForKey:PlotGeotriggerName], @"generic,")
+        ? @"generic"
+        : [geotrigger.userInfo objectForKey:PlotGeotriggerName];
+    NSString* trigger_direction = [self directionForGeotrigger:geotrigger];
+
+    //[standardUserDefaults setObject:trigger_timestamp forKey:@"plot.surveyTriggered"];
+
+    NSDictionary *jsonDictionary =
+        [NSDictionary dictionaryWithObjectsAndKeys:
+                          trigger_id, @"geotrigger_id",
+                      trigger_timestamp, @"detection_timestamp",
+                      trigger_name, @"geotrigger_name",
+                      trigger_direction, @"geotrigger_direction",
+                      nil];
+
+
+    // Write only? It doesn't append...
+    NSMutableArray * arr = [[NSMutableArray alloc] init];
+
+    [arr addObject:jsonDictionary];
+    NSData *jsonData2 = [NSJSONSerialization dataWithJSONObject:arr options:NSJSONWritingPrettyPrinted error:nil];
+    NSString *jsonString = [[NSString alloc] initWithData:jsonData2 encoding:NSUTF8StringEncoding];
+    NSLog(@"jsonData as string:\n%@", jsonString);
+
+    [standardUserDefaults setObject:jsonString forKey:@"plot.surveyTriggered"];
+    [standardUserDefaults synchronize];
+}
 -(void)plotHandleGeotriggersAfterInit:(PlotHandleGeotriggers *)geotriggers {
     if (enableGeotriggerHandler) {
         NSLog(@"PlotProjects - plotHandleGeotriggersAfterInit filter");
