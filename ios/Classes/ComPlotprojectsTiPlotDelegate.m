@@ -204,14 +204,15 @@
     }
 }
 
--(NSString*)directionForGeotrigger:(NSString*)dir {
-    if([dir isEqualToString:PlotGeotriggerTriggerEnter]){
+-(NSString*)directionForGeotrigger:(PlotGeotrigger*)geotrig {
+    NSString* dir = [geotrig.userInfo objectForKey:PlotGeotriggerTrigger];
+    if([PlotGeotriggerTriggerEnter isEqualToString:dir]) {
         return @"enter";
     }
-    if([dir isEqualToString:PlotGeotriggerTriggerExit]){
+    if([PlotGeotriggerTriggerExit isEqualToString:dir]) {
         return @"exit";
     }
-    return nil;
+    return @"other";
 }
 
 // filter out the custom list for HealthKick and let everything else pass.

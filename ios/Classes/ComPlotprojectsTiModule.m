@@ -118,7 +118,8 @@ static ComPlotprojectsTiPlotDelegate* plotDelegate;
     NSLog(@"PlotProjects - called handleLocationUpdate");
 
     PlotLocationWithAccuracy* receivedLocation = notification.userInfo[PlotLocationKey];
-    NSLog(@"PlotProjects - .fired event self %ld",receivedLocation.latitude);
+    NSLog(@"PlotProjects - handleLocationUpdate: %f, %f",
+          receivedLocation.latitude, receivedLocation.longitude);
 
         NSLog(@"PlotProjects - .fired event ComPlotprojectsTiModule");
 
@@ -197,7 +198,7 @@ static ComPlotprojectsTiPlotDelegate* plotDelegate;
     NSString* value = nil;
     ENSURE_ARG_AT_INDEX(value, args, 1, NSString);
 
-    NSLog(@"PlotProjects - setBooleanSegmentationProperty %@", value);
+    NSLog(@"PlotProjects - setStringSegmentationProperty %@", value);
 
     [Plot setStringSegmentationProperty:value forKey:key];
 }
