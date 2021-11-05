@@ -19,6 +19,7 @@ import mei.ble.Encounter;
 import com.plotprojects.retail.android.GeotriggerHandlerUtil;
 import com.plotprojects.retail.android.Geotrigger;
 
+import mei.ble.EncountersApi;
 import mei.ble.GeotriggerAdapter;
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
@@ -41,6 +42,7 @@ import android.location.*;
 import android.R;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 
 import org.json.*;
@@ -70,6 +72,25 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
         List<Geotrigger> triggers = batch.getGeotriggers();
         for (Geotrigger geotrigger: triggers) {
+
+            // DEBUG
+            HashMap<String, Object> more_data = new HashMap<String, Object>();
+            more_data.put("id", geotrigger.getId());
+            more_data.put("name", geotrigger.getName());
+            more_data.put("data", geotrigger.getData());
+            more_data.put("dwellingMinutes", geotrigger.getDwellingMinutes());
+            more_data.put("geofenceLatitude", geotrigger.getGeofenceLatitude());
+            more_data.put("geofenceLongitude", geotrigger.getGeofenceLongitude());
+            more_data.put("internalId", geotrigger.getInternalId());
+            more_data.put("matchId", geotrigger.getMatchId());
+            more_data.put("matchRange", geotrigger.getMatchRange());
+            more_data.put("regionId", geotrigger.getRegionId());
+            more_data.put("regionType", geotrigger.getRegionType());
+            more_data.put("shortId", geotrigger.getShortId());
+            more_data.put("trigger", geotrigger.getTrigger());
+            more_data.put("triggerProperties", geotrigger.getTriggerProperties());
+            Encounter.logToEma("DEBUG> geotrigger details", more_data);
+
             Log.d(TAG,
                     "DEBUG### handle geotrigger:" +
                             " Id="+                geotrigger.getId() +

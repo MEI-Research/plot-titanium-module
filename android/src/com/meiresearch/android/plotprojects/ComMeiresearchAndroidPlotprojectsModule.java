@@ -108,6 +108,8 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		Log.d(LCAT, "Plot Version is - " + version);
 		Log.d(LCAT, "Is Plot Enabled? - " + isEnabled.toString());
 		Log.d(LCAT, "Is GeotriggerHandler Enabled? - " + isGeoTriggerHandlerEnabled.toString());
+
+		Encounter.logToEma("Test message from initPlot()", null);
 	}
 
 	@Kroll.getProperty

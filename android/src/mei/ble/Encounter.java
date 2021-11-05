@@ -39,6 +39,15 @@ public class Encounter {
     /** Active encounter map */
     static Map<String,Encounter> encounterByFriend = new HashMap<>();
 
+    public static void logToEma(String message, HashMap<String, Object> more_data) {
+        HashMap<String, Object> msg = new HashMap<String, Object>();
+        msg.put("event_type", "message");
+        msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
+        msg.put("message", message);
+        if (more_data != null) msg.put("more_data", more_data);
+        EncountersApi.instance.sendEmaEvent(msg);
+    }
+
     public static void reset() {
         encounterByFriend.clear();
     }

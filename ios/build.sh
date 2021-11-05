@@ -14,6 +14,8 @@ NODE_VERSION=10
 echo '[mei] selecting node version via `n`'
 n $NODE_VERSION
 
+rm dist/*
+
 echo '[mei] building via Ti sdk'
 ti build  -p ios -c --build-only --sdk $TI_SDK_VERSION $*
 

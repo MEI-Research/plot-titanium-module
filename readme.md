@@ -1,6 +1,43 @@
-﻿Plot Appcelerator Titanium module
+﻿Plotprojects adapter for EMA, Interaction variant
 =================================
 A module for Appcelerator Titanium apps that adds location based notifications to your app.
+
+
+### Encounters API ###
+
+_plot.encounters_
+
+Returns the singleton EncountersApi object
+
+_encountersApi.minDurationSecs_
+_encountersApi.transientTimeoutSecs_
+_encountersApi.actualTimeoutSecs_
+
+_encountersApi.fetchEvents()_
+
+Returns an array of EncounterEvents encoded as JSON string.
+
+_EncounterEvent_
+
++ event_type - start_transient_encounter | end_transient_encounter | start_actual_encounter | end_actual_encounter | message
++ timestamp
+
+For event_type != message
++ kontakt_beacon_id
++ friend_name
++ min_duration_secs", EncountersApi.instance.minDurationSecs);
++ actual_enc_timeout_secs", EncountersApi.instance.actualTimeoutSecs);
++ transient_enc_timeout_secs", EncountersApi.instance.transientTimeoutSecs);
++ max_detect_event_delta_t", maxDeltaT);
++ num_events", numDeltaT);
++ avg_detect_event_delta_t", avgDeltaT());
++ sd_detect_event_delta_t", sdDeltaT());
+
+For applog
++ message
+
+
+## OLD ###
 
 ### Supported platforms ###
 
