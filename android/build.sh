@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+GITINFO=$( git describe --long --abbrev=6 --dirty=+ )
+( cat manifest.template; \
+  sed -e "s#\\\$GITINFO#$GITINFO#" ../manifest.shared
+) > manifest
+
 echo '[mei] Building Android Plot Projects module via Titanium SDK'
 
 
