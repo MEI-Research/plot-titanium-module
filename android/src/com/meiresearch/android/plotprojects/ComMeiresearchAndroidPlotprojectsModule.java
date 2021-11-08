@@ -40,6 +40,10 @@ import com.plotprojects.retail.android.Plot;
 import com.plotprojects.retail.android.PlotConfiguration;
 import com.plotprojects.retail.android.SentGeotrigger;
 import com.plotprojects.retail.android.SentNotification;
+
+import com.plotprojects.retail.android.PlotAddon;
+import com.plotprojects.addon.interaction_tracer.InteractionTracerAddon;
+
 import com.meiresearch.android.plotprojects.GeotriggerBatches.GeotriggersAndId;
 
 
@@ -99,6 +103,16 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 
 		SettingsUtil.setGeotriggerHandlerEnabled(true);
 		Plot.init(activity);
+
+		// Interaction
+		try {
+			PlotAddon.register(InteractionTracerAddon.class, activity);
+		}
+		catch (Exception ex) {
+			Log.e(LCAT, "PlotAddon.register failed, ignoring", ex);
+			Encounter.logToEma("TPlotAddon.register failed", null);
+
+		}
 
 		isEnabled = Plot.isEnabled();
 		isGeoTriggerHandlerEnabled = SettingsUtil.isGeotriggerHandlerEnabled();
