@@ -96,17 +96,23 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 	 */
 	@Kroll.method
 	public void initPlot() {
+		Log.d(LCAT, "DEBUG>>>>>>> initPlot 1");
 		// put module init code that needs to run when the application is created
 		TiApplication appContext = TiApplication.getInstance();
 
 		Activity activity = appContext.getCurrentActivity();
 
+		Log.d(LCAT, "DEBUG>>>>>>> initPlot 2");
 		SettingsUtil.setGeotriggerHandlerEnabled(true);
+		Log.d(LCAT, "DEBUG>>>>>>> initPlot 3");
 		Plot.init(activity);
 
 		// Interaction
 		try {
+			Log.d(LCAT, "DEBUG>>> Register InteractionTracerAddon...");
 			PlotAddon.register(InteractionTracerAddon.class, activity);
+			Log.d(LCAT, "DEBUG>>> Register InteractionTracerAddon done");
+
 		}
 		catch (Exception ex) {
 			Log.e(LCAT, "PlotAddon.register failed, ignoring", ex);
@@ -123,7 +129,7 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		Log.d(LCAT, "Is Plot Enabled? - " + isEnabled.toString());
 		Log.d(LCAT, "Is GeotriggerHandler Enabled? - " + isGeoTriggerHandlerEnabled.toString());
 
-		Encounter.logToEma("Test message from initPlot()", null);
+		//Encounter.logToEma("Test message from initPlot()", null);
 	}
 
 	@Kroll.getProperty

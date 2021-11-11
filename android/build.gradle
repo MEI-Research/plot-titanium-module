@@ -36,7 +36,7 @@ dependencies {
     implementation "org.altbeacon:android-beacon-library:2.+"
     //implementation 'com.plotprojects:plot-android:3.13.1'
     implementation 'com.plotprojects:plot-android:3.15.0-beta'
-    implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-1.0.0-beta'
+    implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-1.1.0-beta'
     // implementation 'com.plotprojects:plot-android:3.12.1'
 }
 
