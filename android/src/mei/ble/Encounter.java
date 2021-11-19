@@ -49,6 +49,7 @@ public class Encounter {
     }
 
     public static void reset() {
+        Log.i(TAG, "Reset encounters");
         encounterByFriend.clear();
     }
 
