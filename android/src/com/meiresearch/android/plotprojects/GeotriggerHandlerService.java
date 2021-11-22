@@ -89,6 +89,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             more_data.put("shortId", geotrigger.getShortId());
             more_data.put("trigger", geotrigger.getTrigger());
             more_data.put("triggerProperties", geotrigger.getTriggerProperties());
+            more_data.put("geotrig.toString", geotrigger.toString());
+
             Encounter.logToEma("DEBUG> geotrigger details", more_data);
 
             Log.d(TAG,
