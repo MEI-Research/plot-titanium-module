@@ -33,11 +33,11 @@ dependencies {
 
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
+    //// PlotProjects
+    // NOTE:   this (and all version #s) must match EMA:app/platform/android/build.gradle.
     implementation "org.altbeacon:android-beacon-library:2.+"
     implementation 'com.plotprojects:plot-android:3.15.0-beta'
-
-    // NOTE:   this (and all version #s) must match EMA:app/platform/android/build.gradle.
-    implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-1.2.1-beta'
+    implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-1.2.0-beta'
 }
 
 

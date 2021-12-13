@@ -74,6 +74,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         for (Geotrigger geotrigger: triggers) {
 
             // DEBUG
+            /*
             HashMap<String, Object> more_data = new HashMap<String, Object>();
             more_data.put("id", geotrigger.getId());
             more_data.put("name", geotrigger.getName());
@@ -90,20 +91,22 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             more_data.put("trigger", geotrigger.getTrigger());
             more_data.put("triggerProperties", geotrigger.getTriggerProperties());
             more_data.put("geotrig.toString", geotrigger.toString());
-
             Encounter.logToEma("DEBUG> geotrigger details", more_data);
+            */
+
 
             Log.d(TAG,
                     "DEBUG### handle geotrigger:" +
                             " Id="+                geotrigger.getId() +
+                            ", matchPayload=" + geotrigger.getMatchPayload() +
                             ", Name="+             geotrigger.getName() +
 //                            ", Data="+             geotrigger.getData() +
 //                            ", DwellingMinutes="+  geotrigger.getDwellingMinutes() +
 //                            ", GeofenceLatitude="+ geotrigger.getGeofenceLatitude() +
                             ", GeofenceLongitude="+geotrigger.getGeofenceLongitude() +
-                            ", InternalId="+       geotrigger.getInternalId() +
-                            ", MatchId="+          geotrigger.getMatchId() +
-                            ", MatchRange="+       geotrigger.getMatchRange() +
+//                            ", InternalId="+       geotrigger.getInternalId() +
+//                            ", MatchId="+          geotrigger.getMatchId() +
+//                            ", MatchRange="+       geotrigger.getMatchRange() +
                             ", RegionId="+         geotrigger.getRegionId() +
                             ", RegionType="+       geotrigger.getRegionType() +
                             ", ShortId="+          geotrigger.getShortId() +
