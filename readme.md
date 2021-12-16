@@ -2,8 +2,17 @@
 =================================
 A module for Appcelerator Titanium apps that adds location based notifications to your app.
 
+### Build & deploy
 
-### IntelliJ ###
+```
+cd $PROJ_PP/anroid
+./build.sh
+cd $PROJ_EMA
+rm -rf modules/android/com.meiresearch.android.plotprojects
+unzip $PLOTPROJECT/android/dist/*.zip
+```
+
+### IntelliJ Setup ###
 
 To develop:
 
@@ -25,10 +34,13 @@ _plot.encounters_
 
 Returns the singleton EncountersApi object
 
+#### Properties
 _encountersApi.minDurationSecs_
 _encountersApi.transientTimeoutSecs_
 _encountersApi.actualTimeoutSecs_
+_encountersApi.friendList_
 
+#### Methods
 _encountersApi.fetchEvents()_
 
 Returns an array of EncounterEvents encoded as JSON string.

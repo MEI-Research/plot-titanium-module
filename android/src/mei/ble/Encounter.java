@@ -1,12 +1,15 @@
 package mei.ble;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import android.os.Build;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
+
 import com.meiresearch.android.plotprojects.GeotriggerHandlerService;
 import com.plotprojects.retail.android.Geotrigger;
 
@@ -25,6 +28,7 @@ import com.plotprojects.retail.android.Geotrigger;
  *
  * @see <a href="https://docs.google.com/document/d/1vmxGhzkQfuyQNmo0G6gC79s13p938QfATBzHeLTZynA/edit#">BLE Encounter Definition</a>
  */
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class Encounter {
 
     private static final String TAG = Encounter.class.getName();
@@ -40,7 +44,7 @@ public class Encounter {
     static Map<String,Encounter> encounterByFriend = new HashMap<>();
 
     public static void logToEma(String message, HashMap<String, Object> more_data) {
-        HashMap<String, Object> msg = new HashMap<String, Object>();
+        HashMap<String, Object> msg = new HashMap<>();
         msg.put("event_type", "message");
         msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
         msg.put("message", message);
@@ -56,7 +60,7 @@ public class Encounter {
     /**
      * Update each active encounter to reflect that no geotrigger was received since the previous one.
      * This must be called right before handling any new Enter events in a batch.
-     * @param now
+     * @param now - for test we can mess with time
      */
     public static void updateAllForPassedTime(Instant now) {
         Log.d(TAG, "updateAllForPassedTime, keys= " + encounterByFriend.keySet() + ", now=" + now);
@@ -76,25 +80,29 @@ public class Encounter {
      *                  the events over the previous interval.
      * @return true if the geotrigger has been completely processed
      */
-    public static boolean handleGeotrigger(GeotriggerAdapter geotrigger, Instant eventTime) {
-        Log.d(TAG, "handleGeotrigger " + geotrigger);
+    public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
+        BeaconEvent beaconEvent = new BeaconEvent(geotrigger);
+        Friend friend = beaconEvent.getFriend();
+        Log.d(TAG, "friend=" + friend + ", handleGeotrigger " + beaconEvent);
+        if (friend == null)
+            return false;
+
         if (eventTime == null) {
             eventTime = Instant.now();
         }
-        String friendCode = geotrigger.friendCode();
-        Encounter encounter = encounterByFriend.get(friendCode);
+        Encounter encounter = encounterByFriend.get(friend);
 
         if (encounter == null) {
             // A new encounter
-            if (geotrigger.isBeaconEnter()) {
+            if (beaconEvent.isBeaconEnter()) {
                 encounterByFriend.put(
-                        friendCode,
-                        new Encounter(friendCode, geotrigger.kontactBeaconId(), eventTime));
+                        friend.name,
+                        new Encounter(friend, eventTime));
             }
             // ignore subsequent enter events & spurious exits
         }
         else {
-            encounter.updateForGeotrigger(geotrigger, eventTime);
+            encounter.updateForGeotrigger(beaconEvent, eventTime);
         }
         return true;
     }
@@ -105,9 +113,8 @@ public class Encounter {
     
     //// Encounter fields
     
-    final String friendCode;
-    final String kontaktId;
-    
+    final Friend friend;
+
     //// Encounter state is a function of these 3 initialEnter, recentExit, mostRecentEnter and currentTime
     
     /** Time of the initial Enter geotrigger */
@@ -147,9 +154,8 @@ public class Encounter {
     //// State transition
 
     /** Start new encounter */
-    public Encounter(String friendCode, String kontaktId, Instant eventTime) {
-        this.friendCode = friendCode;
-        this.kontaktId = kontaktId;
+    public Encounter(Friend friend, Instant eventTime) {
+        this.friend = friend;
         initialEnter = eventTime;
         mostRecentEnter = eventTime;
 
@@ -168,7 +174,7 @@ public class Encounter {
                     if (now.isAfter(endTransientAt)) {
                         Log.d(TAG, "will signalEnd");
                         signalEnd(recentExit.get());
-                        encounterByFriend.remove(friendCode);
+                        encounterByFriend.remove(friend.name);
                     }
                 } else if (now.isAfter(becomesActualAt())) {
                     Log.d(TAG, "will signalStartActual");
@@ -184,7 +190,7 @@ public class Encounter {
                 if (now.isAfter(endActualAt)) {
                     signalEnd(endActualAt);
                     //signalEnd(mostRecentEnter.plusSeconds(EncountersApi.instance.minDurationSecs));
-                    encounterByFriend.remove(friendCode);
+                    encounterByFriend.remove(friend.name);
                 }
                 break;
         }
@@ -192,7 +198,7 @@ public class Encounter {
     }
 
     /** Apply a geotrigger */
-    void updateForGeotrigger(GeotriggerAdapter geotrigger, Instant now) {
+    void updateForGeotrigger(BeaconEvent geotrigger, Instant now) {
         Log.d(TAG, "updateForGeotrigger enter: " + this);
         if (geotrigger.isBeaconExit()) {
             if (encounterType == EncounterType.TRANSIENT) {
@@ -278,8 +284,7 @@ public class Encounter {
 
     private HashMap<String,Object> toMap() {
         HashMap<String,Object>  map = new HashMap<String,Object> ();
-        map.put("kontakt_beacon_id", kontaktId);
-        map.put("friend_name", friendCode);
+        map.put("friend", friend.name);
         map.put("min_duration_secs", EncountersApi.instance.minDurationSecs);
         map.put("actual_enc_timeout_secs", EncountersApi.instance.actualTimeoutSecs);
         map.put("transient_enc_timeout_secs", EncountersApi.instance.transientTimeoutSecs);
@@ -298,7 +303,7 @@ public class Encounter {
 
     @Override
     public String toString() {
-        return "Encounter(friend=" + friendCode + ", start=" + initialEnter + ", type=" + encounterType +
+        return "Encounter(friend=" + friend + ", start=" + initialEnter + ", type=" + encounterType +
                 ", recentExit=" + recentExit +
                 ", mostRecentEnter=" + mostRecentEnter +
                 ", actualAt=" + becomesActualAt() +

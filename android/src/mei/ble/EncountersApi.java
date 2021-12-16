@@ -23,8 +23,8 @@ public class EncountersApi extends KrollProxy {
 
     public static final String BLE_EVENTS_PROP = "ble.events";
 
+    /** Singleton */
     public static final EncountersApi instance = new EncountersApi();
-
     private EncountersApi() {}
 
     /**
@@ -33,6 +33,12 @@ public class EncountersApi extends KrollProxy {
      */
     private LinkedTransferQueue<HashMap<String,Object>> undeliveredEncounterEvents
             = new LinkedTransferQueue<HashMap<String,Object>>();
+
+    @Kroll.setProperty
+    public void setFriendList(String friendCsv) {
+        Log.d(TAG, "DEBUG###### setFriendList=" + friendCsv);
+        Friend.setFriendList(friendCsv);
+    }
 
     // Default values for testing
     public long minDurationSecs = 5 * 60;

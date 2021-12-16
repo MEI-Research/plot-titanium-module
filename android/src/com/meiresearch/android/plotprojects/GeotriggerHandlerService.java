@@ -19,11 +19,11 @@ import mei.ble.Encounter;
 import com.plotprojects.retail.android.GeotriggerHandlerUtil;
 import com.plotprojects.retail.android.Geotrigger;
 
-import mei.ble.EncountersApi;
-import mei.ble.GeotriggerAdapter;
+import mei.ble.BeaconEvent;
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import android.app.NotificationManager;
 import android.app.NotificationChannel;
@@ -33,11 +33,10 @@ import android.net.Uri;
 import android.content.Intent;
 import android.content.Context;
 
+import android.os.Build;
 import android.util.Log;
-import ti.modules.titanium.android.TiBroadcastReceiver;
 import android.content.BroadcastReceiver;
 import android.app.AlarmManager;
-import android.location.*;
 
 import android.R;
 
@@ -47,7 +46,7 @@ import java.util.List;
 
 import org.json.*;
 
-
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class GeotriggerHandlerService extends BroadcastReceiver {
 
     private static final String TAG = "GeotriggerHandlerService";
@@ -61,6 +60,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         Instant eventTime = Instant.now();
         Log.d(TAG, "Geofence triggered at " + eventTime.toString());
 
+        // If EXIT geotriggers are not reliable, this will need be called on a schedule
+        // if an EXIT trigger needs to fire.  Currently not the case.
         Encounter.updateAllForPassedTime(eventTime);
 
         if (!GeotriggerHandlerUtil.isGeotriggerHandlerBroadcastReceiverIntent(context, intent))
@@ -73,135 +74,90 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         List<Geotrigger> triggers = batch.getGeotriggers();
         for (Geotrigger geotrigger: triggers) {
 
-            // DEBUG
-            /*
-            HashMap<String, Object> more_data = new HashMap<String, Object>();
-            more_data.put("id", geotrigger.getId());
-            more_data.put("name", geotrigger.getName());
-            more_data.put("data", geotrigger.getData());
-            more_data.put("dwellingMinutes", geotrigger.getDwellingMinutes());
-            more_data.put("geofenceLatitude", geotrigger.getGeofenceLatitude());
-            more_data.put("geofenceLongitude", geotrigger.getGeofenceLongitude());
-            more_data.put("internalId", geotrigger.getInternalId());
-            more_data.put("matchId", geotrigger.getMatchId());
-            more_data.put("matchRange", geotrigger.getMatchRange());
-            more_data.put("regionId", geotrigger.getRegionId());
-            more_data.put("regionType", geotrigger.getRegionType());
-            more_data.put("shortId", geotrigger.getShortId());
-            more_data.put("trigger", geotrigger.getTrigger());
-            more_data.put("triggerProperties", geotrigger.getTriggerProperties());
-            more_data.put("geotrig.toString", geotrigger.toString());
-            Encounter.logToEma("DEBUG> geotrigger details", more_data);
-            */
+            logGeotrigger(geotrigger);
+            // logGeotriggerToEma(geotrigger);
 
-
-            Log.d(TAG,
-                    "DEBUG### handle geotrigger:" +
-                            " Id="+                geotrigger.getId() +
-                            ", matchPayload=" + geotrigger.getMatchPayload() +
-                            ", Name="+             geotrigger.getName() +
-//                            ", Data="+             geotrigger.getData() +
-//                            ", DwellingMinutes="+  geotrigger.getDwellingMinutes() +
-//                            ", GeofenceLatitude="+ geotrigger.getGeofenceLatitude() +
-                            ", GeofenceLongitude="+geotrigger.getGeofenceLongitude() +
-//                            ", InternalId="+       geotrigger.getInternalId() +
-//                            ", MatchId="+          geotrigger.getMatchId() +
-//                            ", MatchRange="+       geotrigger.getMatchRange() +
-                            ", RegionId="+         geotrigger.getRegionId() +
-                            ", RegionType="+       geotrigger.getRegionType() +
-                            ", ShortId="+          geotrigger.getShortId() +
-                            ", Trigger="+          geotrigger.getTrigger() +
-                            ", TriggerProperties="+geotrigger.getTriggerProperties());
-            GeotriggerAdapter geotrigAdapt = new GeotriggerAdapter(geotrigger);
-            if (geotrigAdapt.isBeaconEvent()) {
-                Encounter.handleGeotrigger(geotrigAdapt, eventTime);
+            if (Encounter.handleGeotrigger(geotrigger, eventTime)) {
+                continue;
             }
-            // TODO: handle geofence triggers
+            handleGeotrigger(geotrigger);
         }
-
         batch.markGeotriggersHandled(triggers);
-        Log.d(TAG, "DEBUG######### markGeotriggersHandled happened:");
+    }
 
-        // Skip geofence stuff
-        return;
-    /*
-
+    private void handleGeotrigger(Geotrigger geotrigger) {
         // limit how often these can fire. which improves preformance of EMA due to less data to process.
-            Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
+        Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
 
-        // We do not need to get location anymore
-//        Location location;
-//        try {
-//            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-//            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//            if (location != null) {
-//                Log.d(TAG, "Location lat:" + location.getLatitude());
-//                Log.d(TAG, "Location lon:" + location.getLongitude());
-//                Log.d(TAG, "-- end  -- ");
-//            } else {
-//                Log.d(TAG, "Location Null");
-//            }
-//
-//        } catch (SecurityException e) {
-//            Log.e(TAG, "security exception, is the LOCATION permission allowed?");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-        for(int i = 0; i < triggers.size(); i++){
-            Geotrigger t = triggers.get(i);
-
-            Log.d("Handled Geotrigger", t.toString());
+        Log.d("Handled Geotrigger", geotrigger.toString());
 
 
-            // All of the properties of the geotrigger (aka Enter Event)
-            Log.d(TAG,
-                  "handle geotrigger:" +
-                  " Id="+               t.getId() +
-                  ", Name="+             t.getName() +
-                  ", Data="+             t.getData() +
-                  ", DwellingMinutes="+  t.getDwellingMinutes() +
-                  ", GeofenceLatitude="+ t.getGeofenceLatitude() +
-                  ", GeofenceLongitude="+t.getGeofenceLongitude() +
-                  ", InternalId="+       t.getInternalId() +
-                  ", MatchId="+          t.getMatchId() +
-                  ", MatchRange="+       t.getMatchRange() +
-                  ", RegionId="+         t.getRegionId() +
-                  ", RegionType="+       t.getRegionType() +
-                  ", ShortId="+          t.getShortId() +
-                  ", Trigger="+          t.getTrigger() +
-                  ", TriggerProperties="+t.getTriggerProperties());
+        // enabling Dwell again. uncomment to disable Dwell feature.
+        // if("exit".equals(t.getTrigger())){
+        //     // disabling exit triggers for recent testing.
+        //     Log.d(TAG, " exit trigger, not attempting to notify - exits disabled");
+        //     continue;
+        // }
 
+        // if an exit trigger is being checked, we should allow the processing of that.
+        // if we're finally processing after a reasonable delay an entry trigger, allow that.
+        // disallow too frequent of processing of enter triggers.
+        if(enteredFrequencyAllowed == true || "exit".equals(geotrigger.getTrigger())){
+            Long tsLong = System.currentTimeMillis()/1000l;
+            String ts = tsLong.toString();
+            String geofenceName = geotrigger.getName();
 
-            // enabling Dwell again. uncomment to disable Dwell feature.
-            // if("exit".equals(t.getTrigger())){
-            //     // disabling exit triggers for recent testing.
-            //     Log.d(TAG, " exit trigger, not attempting to notify - exits disabled");
-            //     continue;
-            // }
-
-            // if an exit trigger is being checked, we should allow the processing of that.
-            // if we're finally processing after a reasonable delay an entry trigger, allow that.
-            // disallow too frequent of processing of enter triggers.
-            if(enteredFrequencyAllowed == true || "exit".equals(t.getTrigger())){
-                Long tsLong = System.currentTimeMillis()/1000l;
-                String ts = tsLong.toString();
-                String geofenceName = t.getName();
-
-                if(EMAFilterRegion.regionAllowed(geofenceName)){
-                    // for healthkick, we have to test regions and ensure consistent 'generic' naming of a region.
-                    if(geofenceName.indexOf("generic,") == 0){
-                        geofenceName = "generic";
-                    }
-
-                    sendEventToEMA(ts, geofenceName, t.getId(), t.getTrigger(), t.getGeofenceLatitude(), t.getGeofenceLongitude());
-                    sendNotification(t.getTrigger());
+            if(EMAFilterRegion.regionAllowed(geofenceName)){
+                // for healthkick, we have to test regions and ensure consistent 'generic' naming of a region.
+                if(geofenceName.indexOf("generic,") == 0){
+                    geofenceName = "generic";
                 }
+
+                sendEventToEMA(ts, geofenceName, geotrigger.getId(), geotrigger.getTrigger(), geotrigger.getGeofenceLatitude(), geotrigger.getGeofenceLongitude());
+                sendNotification(geotrigger.getTrigger());
             }
         }
+    }
 
+    private void logGeotrigger(Geotrigger geotrigger) {
+        // All of the properties of the geotrigger (aka Enter Event)
+        Log.d(TAG,
+              "handle geotrigger:" +
+              " Id="+               geotrigger.getId() +
+              ", Name="+             geotrigger.getName() +
+              ", Data="+             geotrigger.getData() +
+              ", DwellingMinutes="+  geotrigger.getDwellingMinutes() +
+              ", GeofenceLatitude="+ geotrigger.getGeofenceLatitude() +
+              ", GeofenceLongitude="+ geotrigger.getGeofenceLongitude() +
+              ", InternalId="+       geotrigger.getInternalId() +
+              ", MatchId="+          geotrigger.getMatchId() +
+              ", MatchRange="+       geotrigger.getMatchRange() +
+              ", matchPayload=" + geotrigger.getMatchPayload() +
+              ", RegionId="+         geotrigger.getRegionId() +
+              ", RegionType="+       geotrigger.getRegionType() +
+              ", ShortId="+          geotrigger.getShortId() +
+              ", Trigger="+          geotrigger.getTrigger() +
+              ", TriggerProperties="+ geotrigger.getTriggerProperties());
+    }
 
-        batch.markGeotriggersHandled(triggers);
-      */
+    private void logGeotriggerToEma(Geotrigger geotrigger) {
+        HashMap<String, Object> more_data = new HashMap<String, Object>();
+        more_data.put("id", geotrigger.getId());
+        more_data.put("name", geotrigger.getName());
+        more_data.put("data", geotrigger.getData());
+        more_data.put("dwellingMinutes", geotrigger.getDwellingMinutes());
+        more_data.put("geofenceLatitude", geotrigger.getGeofenceLatitude());
+        more_data.put("geofenceLongitude", geotrigger.getGeofenceLongitude());
+        more_data.put("internalId", geotrigger.getInternalId());
+        more_data.put("matchId", geotrigger.getMatchId());
+        more_data.put("matchRange", geotrigger.getMatchRange());
+        more_data.put("regionId", geotrigger.getRegionId());
+        more_data.put("regionType", geotrigger.getRegionType());
+        more_data.put("shortId", geotrigger.getShortId());
+        more_data.put("trigger", geotrigger.getTrigger());
+        more_data.put("triggerProperties", geotrigger.getTriggerProperties());
+        more_data.put("geotrig.toString", geotrigger.toString());
+        Encounter.logToEma("DEBUG> geotrigger details", more_data);
     }
 
     // return true if this batch of triggers should be iterated over and worked on, based on time filtering.

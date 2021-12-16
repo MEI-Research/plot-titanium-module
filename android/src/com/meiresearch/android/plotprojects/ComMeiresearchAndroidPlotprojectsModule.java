@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import android.app.Activity;
 import android.content.Context;
@@ -90,28 +92,22 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		Encounter.reset();
 	}
 
-
 	/**
 	 * Called on bye EMA on login and after every sync.
 	 */
 	@Kroll.method
 	public void initPlot() {
-		Log.d(LCAT, "DEBUG>>>>>>> initPlot 1");
 		// put module init code that needs to run when the application is created
 		TiApplication appContext = TiApplication.getInstance();
 
 		Activity activity = appContext.getCurrentActivity();
 
-		Log.d(LCAT, "DEBUG>>>>>>> initPlot 2");
 		SettingsUtil.setGeotriggerHandlerEnabled(true);
-		Log.d(LCAT, "DEBUG>>>>>>> initPlot 3");
 		Plot.init(activity);
 
 		// Interaction
 		try {
-			Log.d(LCAT, "DEBUG>>> Register InteractionTracerAddon...");
 			PlotAddon.register(InteractionTracerAddon.class, activity);
-			Log.d(LCAT, "DEBUG>>> Register InteractionTracerAddon done");
 
 		}
 		catch (Exception ex) {
@@ -132,10 +128,23 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		//Encounter.logToEma("Test message from initPlot()", null);
 	}
 
+	/**
+	 * To facilitate client-specific MEI tiModules, all changes should be in a client- or feature-
+	 * specific package and vend its API via this TiProxy.
+	 * The module maintains a Map<String,String> of custom properties are used by client-specific
+	 * extensions to the MEI Plotproject module. They are writeable by EMA, and readable only from
+	 * within the module.
+	 * This makes applying updates from plotprojects/master branch easier.
+	 */
 	@Kroll.getProperty
-	public EncountersApi getEncounters() {
+	public EncountersApi getExtensionApi() {
 		return EncountersApi.instance;
 	}
+
+//	@Kroll.getProperty
+//	public EncountersApi getEncounters() {
+//		return EncountersApi.instance;
+//	}
 
 //	/**
 //	 * Retrieves events detected

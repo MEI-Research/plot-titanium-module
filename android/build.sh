@@ -16,8 +16,8 @@ n $NODE_VERSION
 
 rm dist build
 
-echo '[mei] building via Ti sdk'
+echo `date` '[mei] building via Ti sdk'
 ti build  -p android -c --build-only --sdk $TI_SDK_VERSION
 
 echo ''
-echo '[mei] build complete'
+echo `date` '[mei] build complete'
