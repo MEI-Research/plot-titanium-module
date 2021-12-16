@@ -96,6 +96,7 @@ public class EncountersApi extends KrollProxy {
 
 
     public void sendEmaEvent(HashMap<String,Object> event) {
+        Log.d(TAG, "sendEmaEvent: " + event);
         synchronized (undeliveredEncounterEvents) {
             undeliveredEncounterEvents.add(new HashMap<String,Object>(event));
         }
