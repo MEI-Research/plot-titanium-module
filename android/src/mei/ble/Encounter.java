@@ -78,10 +78,13 @@ public class Encounter {
      * @param eventTime - estimate of when the event happened; defaults to current time.
      *                  Geotrigger has no time filed & we get them in batche so the caller might attempt to distribute
      *                  the events over the previous interval.
-     * @return true if the geotrigger has been completely processed
+     * @return true if the geotrigger was a beacon event that is now processed
      */
     public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
-        BeaconEvent beaconEvent = new BeaconEvent(geotrigger);
+        BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
+        if (beaconEvent == null) {
+            return false;
+        }
         Friend friend = beaconEvent.getFriend();
         Log.d(TAG, "friend=" + friend + ", handleGeotrigger " + beaconEvent);
         if (friend == null)
