@@ -289,6 +289,7 @@ public class Encounter {
     private HashMap<String,Object> toMap() {
         HashMap<String,Object>  map = new HashMap<String,Object> ();
         map.put("friend_name", friend.name);
+        map.put("kontakt_beacon_id", friend.tag);
         map.put("min_duration_secs", EncountersApi.instance.minDurationSecs);
         map.put("actual_enc_timeout_secs", EncountersApi.instance.actualTimeoutSecs);
         map.put("transient_enc_timeout_secs", EncountersApi.instance.transientTimeoutSecs);
