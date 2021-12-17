@@ -89,9 +89,6 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         // limit how often these can fire. which improves preformance of EMA due to less data to process.
         Boolean enteredFrequencyAllowed = reduceBLETriggerFrequency();
 
-        Log.d("Handled Geotrigger", geotrigger.toString());
-
-
         // enabling Dwell again. uncomment to disable Dwell feature.
         // if("exit".equals(t.getTrigger())){
         //     // disabling exit triggers for recent testing.

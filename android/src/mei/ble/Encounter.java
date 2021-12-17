@@ -82,6 +82,7 @@ public class Encounter {
      */
     public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
         BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
+        Log.d(TAG, "TRACE>>>>handleGeotrigger:" + beaconEvent);
         if (beaconEvent == null) {
             return false;
         }
@@ -105,7 +106,7 @@ public class Encounter {
             // ignore subsequent enter events & spurious exits
         }
         else {
-            encounter.updateForGeotrigger(beaconEvent, eventTime);
+            encounter.updateForBeaconEvent(beaconEvent, eventTime);
         }
         return true;
     }
@@ -157,7 +158,7 @@ public class Encounter {
     //// State transition
 
     /** Start new encounter */
-    public Encounter(Friend friend, Instant eventTime) {
+    Encounter(Friend friend, Instant eventTime) {
         this.friend = friend;
         initialEnter = eventTime;
         mostRecentEnter = eventTime;
@@ -197,19 +198,19 @@ public class Encounter {
                 }
                 break;
         }
-        Log.d(TAG, "updateForCurrentTime exit: " + this);
+        Log.d(TAG, "updateForCurrentTime result: " + this);
     }
 
     /** Apply a geotrigger */
-    void updateForGeotrigger(BeaconEvent geotrigger, Instant now) {
-        Log.d(TAG, "updateForGeotrigger enter: " + this);
-        if (geotrigger.isBeaconExit()) {
+    void updateForBeaconEvent(BeaconEvent beaconEvent, Instant now) {
+        Log.d(TAG, "updateForBeaconEvent:" + this);
+        if (beaconEvent.isBeaconExit()) {
             if (encounterType == EncounterType.TRANSIENT) {
                 // Start the clock to end the transient encounter
                 recentExit = Optional.of(now);
             }
 
-        } else if (geotrigger.isBeaconEnter()) {
+        } else if (beaconEvent.isBeaconEnter()) {
             double deltaT = -1;
             if (recentExit.isPresent()) {
                 Log.d(TAG, "Resume from exiting ");
@@ -225,7 +226,7 @@ public class Encounter {
             }
             mostRecentEnter = now;
         }
-        Log.d(TAG, "updateForGeotrigger exit: " + this);
+        Log.d(TAG, "updateForGeotrigger result: " + this);
     }
 
     private void clearStats() {

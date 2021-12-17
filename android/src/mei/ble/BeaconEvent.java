@@ -1,6 +1,7 @@
 package mei.ble;
 
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
@@ -22,7 +23,6 @@ public final class BeaconEvent {
     }
 
     final Geotrigger geotrigger;
-    final String[] nameParts;
 
     /**
      * @param geotrigger
@@ -30,6 +30,7 @@ public final class BeaconEvent {
      */
     public static BeaconEvent forGeotrigger(Geotrigger geotrigger) {
         BeaconEvent beaconEvent = new BeaconEvent(geotrigger);
+        Log.d(TAG, "forGeotrigger=" + beaconEvent);
         if (beaconEvent.getFriend() == null) {
             return null;
         }
@@ -38,7 +39,6 @@ public final class BeaconEvent {
 
     private BeaconEvent(Geotrigger geotrigger) {
         this.geotrigger = geotrigger;
-        nameParts = geotrigger.getName().split(",");
     }
 
     public boolean isBeaconEnter() {
@@ -75,8 +75,7 @@ public final class BeaconEvent {
     }
 
     public void appendTo(StringBuffer b) {
-        b.append(getClass().getSimpleName());
-        b.append("(").append("friend=").append(getFriend());
+        b.append("BeaconEvent(").append("friend=").append(getFriend());
         b.append(")");
     }
 }

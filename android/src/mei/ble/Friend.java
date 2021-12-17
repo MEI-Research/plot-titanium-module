@@ -15,6 +15,7 @@ public class Friend {
         if (majorId == null || minorId == null)
             return null;
 
+        Log.d(TAG, "forBeacon: " + majorId + ", " + minorId + ", " + friendList.toString());
         for (Friend friend : friendList) {
             if (friend.majorId.equals(majorId) && friend.minorId.endsWith(minorId))
                 return friend;

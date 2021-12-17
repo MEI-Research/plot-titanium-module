@@ -79,22 +79,6 @@ public class EncountersApi extends KrollProxy {
         return result.toString();
     }
 
-//    public KrollDict[] fetchEvents() {
-//        KrollDict[] result = (KrollDict[])undeliveredEncounterEvents.toArray();
-//        undeliveredEncounterEvents.clear();
-//        return result;
-//    }
-
-//    @Kroll.method()
-//    public HashMap<String,Object> nextEncountEvent() {
-//        HashMap<String,Object> result = undeliveredEncounterEvents.poll();
-//        if (result != null) {
-//            // TODO: persist
-//        }
-//        return result;
-//    }
-
-
     public void sendEmaEvent(HashMap<String,Object> event) {
         Log.d(TAG, "sendEmaEvent: " + event);
         synchronized (undeliveredEncounterEvents) {
