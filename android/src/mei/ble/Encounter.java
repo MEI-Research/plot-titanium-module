@@ -41,7 +41,7 @@ public class Encounter {
 
 
     /** Active encounter map */
-    static Map<String,Encounter> encounterByFriend = new HashMap<>();
+    static Map<String,Encounter> encounterByFriendName = new HashMap<String,Encounter>();
 
     public static void logToEma(String message, HashMap<String, Object> more_data) {
         HashMap<String, Object> msg = new HashMap<>();
@@ -54,7 +54,7 @@ public class Encounter {
 
     public static void reset() {
         Log.i(TAG, "Reset encounters");
-        encounterByFriend.clear();
+        encounterByFriendName.clear();
     }
 
     /**
@@ -63,8 +63,8 @@ public class Encounter {
      * @param now - for test we can mess with time
      */
     public static void updateAllForPassedTime(Instant now) {
-        Log.d(TAG, "updateAllForPassedTime, keys= " + encounterByFriend.keySet() + ", now=" + now);
-        for (Encounter encounter: encounterByFriend.values()) {
+        Log.d(TAG, "updateAllForPassedTime, keys= " + encounterByFriendName.keySet() + ", now=" + now);
+        for (Encounter encounter: encounterByFriendName.values()) {
             encounter.updateForCurrentTime(now);
         }
     }
@@ -81,32 +81,39 @@ public class Encounter {
      * @return true if the geotrigger was a beacon event that is now processed
      */
     public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
+        Log.d(TAG, "handleGeotrigger: geotrigger=" + geotrigger);
         BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
-        Log.d(TAG, "TRACE>>>>handleGeotrigger:" + beaconEvent);
         if (beaconEvent == null) {
+            Log.d(TAG, "not a friend beacon event");
             return false;
         }
         Friend friend = beaconEvent.getFriend();
         Log.d(TAG, "friend=" + friend + ", handleGeotrigger " + beaconEvent);
-        if (friend == null)
+        if (friend == null) {
+            Log.e(TAG, "can't happen");
             return false;
+        }
 
         if (eventTime == null) {
             eventTime = Instant.now();
         }
-        Encounter encounter = encounterByFriend.get(friend);
-
-        if (encounter == null) {
-            // A new encounter
-            if (beaconEvent.isBeaconEnter()) {
-                encounterByFriend.put(
-                        friend.name,
-                        new Encounter(friend, eventTime));
-            }
-            // ignore subsequent enter events & spurious exits
+        Encounter currenyEncounter = encounterByFriendName.get(friend.name);
+        if (currenyEncounter != null) {
+            currenyEncounter.updateForBeaconEvent(beaconEvent, eventTime);
+            return true;
         }
-        else {
-            encounter.updateForBeaconEvent(beaconEvent, eventTime);
+
+        Log.d(TAG, "DEBUG>>> no existing encounter");
+        if (!beaconEvent.isBeaconEnter()) {
+            Log.w(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName.toString());
+            return true;
+        }
+        // A new encounter
+        if (beaconEvent.isBeaconEnter()) {
+            Log.d(TAG, "DEBUG>>> is enter: start encounter");
+            encounterByFriendName.put(
+                    friend.name,
+                    new Encounter(friend, eventTime));
         }
         return true;
     }
@@ -178,7 +185,7 @@ public class Encounter {
                     if (now.isAfter(endTransientAt)) {
                         Log.d(TAG, "will signalEnd");
                         signalEnd(recentExit.get());
-                        encounterByFriend.remove(friend.name);
+                        encounterByFriendName.remove(friend.name);
                     }
                 } else if (now.isAfter(becomesActualAt())) {
                     Log.d(TAG, "will signalStartActual");
@@ -194,7 +201,7 @@ public class Encounter {
                 if (now.isAfter(endActualAt)) {
                     signalEnd(endActualAt);
                     //signalEnd(mostRecentEnter.plusSeconds(EncountersApi.instance.minDurationSecs));
-                    encounterByFriend.remove(friend.name);
+                    encounterByFriendName.remove(friend.name);
                 }
                 break;
         }

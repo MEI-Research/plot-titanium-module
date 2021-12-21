@@ -76,6 +76,9 @@ public final class BeaconEvent {
 
     public void appendTo(StringBuffer b) {
         b.append("BeaconEvent(").append("friend=").append(getFriend());
+        b.append(", geotrig.trig=").append(geotrigger.getTrigger());
+        b.append(", isEnter=").append(isBeaconEnter());
+        b.append(", isExit=").append(isBeaconExit());
         b.append(")");
     }
 }
