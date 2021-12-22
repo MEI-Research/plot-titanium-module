@@ -20,6 +20,8 @@ import com.plotprojects.retail.android.GeotriggerHandlerUtil;
 import com.plotprojects.retail.android.Geotrigger;
 
 import mei.ble.BeaconEvent;
+import mei.ble.mei.Debug;
+
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
 
@@ -49,7 +51,7 @@ import org.json.*;
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class GeotriggerHandlerService extends BroadcastReceiver {
 
-    private static final String TAG = "GeotriggerHandlerService";
+    private static final String TAG = "GeotriggerHandlerSvc";
 
     // Ti App Properties
     public static final String REDUCE_BLETRIGGER_FREQUENCY = "plot.reduceBLETriggerFrequency";
@@ -80,7 +82,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             if (Encounter.handleGeotrigger(geotrigger, eventTime)) {
                 continue;
             }
-            handleGeotrigger(geotrigger);
+            // TODO: we can eventually allow both kinds of campaigns
+            // handleGeotrigger(geotrigger);
         }
         batch.markGeotriggersHandled(triggers);
     }
@@ -109,7 +112,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                 if(geofenceName.indexOf("generic,") == 0){
                     geofenceName = "generic";
                 }
-
+                Debug.log(TAG, "geoFENCE trigger");
                 sendEventToEMA(ts, geofenceName, geotrigger.getId(), geotrigger.getTrigger(), geotrigger.getGeofenceLatitude(), geotrigger.getGeofenceLongitude());
                 sendNotification(geotrigger.getTrigger());
             }
@@ -118,6 +121,10 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
     private void logGeotrigger(Geotrigger geotrigger) {
         // All of the properties of the geotrigger (aka Enter Event)
+        Debug.log(TAG, "got geotrigger",
+                "trigger", geotrigger.getTrigger(),
+                "name", geotrigger.getName(),
+                "matchPayload", geotrigger.getMatchPayload());
         Log.d(TAG,
               "handle geotrigger:" +
               " Id="+               geotrigger.getId() +

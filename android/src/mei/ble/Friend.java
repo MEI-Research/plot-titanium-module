@@ -1,15 +1,21 @@
 package mei.ble;
 
+import android.os.Build;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import mei.ble.mei.Debug;
+
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class Friend {
     private static final String TAG = Friend.class.getName();
 
-    private static List<Friend> friendList = new ArrayList<Friend>();
+    public static List<Friend> friendList = new ArrayList<Friend>();
     public static Friend forBeacon(String majorId, String minorId) {
         if (majorId == null || minorId == null)
             return null;
@@ -23,6 +29,7 @@ public class Friend {
     }
     public static void setFriendList(String friendCsv) {
         Log.d(TAG, "setFriendList(" + friendCsv + ")");
+        Debug.log(TAG, "setFriendList", "friendCsv", friendCsv);
         friendList.clear();
         for (String dsv: friendCsv.split(", *")) {
             friendList.add(new Friend(dsv));

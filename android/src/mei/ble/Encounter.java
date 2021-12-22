@@ -13,6 +13,9 @@ import androidx.annotation.RequiresApi;
 import com.meiresearch.android.plotprojects.GeotriggerHandlerService;
 import com.plotprojects.retail.android.Geotrigger;
 
+import mei.MapUtil;
+import mei.ble.mei.Debug;
+
 
 /**
  * Implements the state machine from the BLE Encounter Definition document
@@ -52,6 +55,10 @@ public class Encounter {
         EncountersApi.instance.sendEmaEvent(msg);
     }
 
+    public static void logEma(String msg, Object... keyValues) {
+        logToEma(msg, MapUtil.mapFromArray(keyValues));
+    }
+
     public static void reset() {
         Log.i(TAG, "Reset encounters");
         encounterByFriendName.clear();
@@ -84,13 +91,15 @@ public class Encounter {
         Log.d(TAG, "handleGeotrigger: geotrigger=" + geotrigger);
         BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
         if (beaconEvent == null) {
-            Log.d(TAG, "not a friend beacon event");
+            Debug.log(TAG, "not a friend beacon event",
+                    "matchPayload", geotrigger.getMatchPayload(),
+                    "friendList", Friend.friendList.toString());
             return false;
         }
         Friend friend = beaconEvent.getFriend();
         Log.d(TAG, "friend=" + friend + ", handleGeotrigger " + beaconEvent);
         if (friend == null) {
-            Log.e(TAG, "can't happen");
+            Debug.log(TAG, "can't happen");
             return false;
         }
 
@@ -103,17 +112,18 @@ public class Encounter {
             return true;
         }
 
-        Log.d(TAG, "DEBUG>>> no existing encounter");
+        Debug.log(TAG, "no existing encounter", "friend", friend);
         if (!beaconEvent.isBeaconEnter()) {
-            Log.w(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName.toString());
+            Debug.log(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName.toString());
             return true;
         }
         // A new encounter
         if (beaconEvent.isBeaconEnter()) {
-            Log.d(TAG, "DEBUG>>> is enter: start encounter");
             encounterByFriendName.put(
                     friend.name,
                     new Encounter(friend, eventTime));
+            Debug.log(TAG, "DEBUG>>> is enter: started new encounter",
+                    encounterByFriendName, "encounterByFriendName");
         }
         return true;
     }
@@ -183,12 +193,12 @@ public class Encounter {
                 if (recentExit.isPresent()) {
                     Instant endTransientAt = recentExit.get().plusSeconds(EncountersApi.instance.transientTimeoutSecs);
                     if (now.isAfter(endTransientAt)) {
-                        Log.d(TAG, "will signalEnd");
+                        Debug.log(TAG, "will signalEnd");
                         signalEnd(recentExit.get());
                         encounterByFriendName.remove(friend.name);
                     }
                 } else if (now.isAfter(becomesActualAt())) {
-                    Log.d(TAG, "will signalStartActual");
+                    Debug.log(TAG, "will signalStartActual");
                     encounterType = EncounterType.ACTUAL;
                     signalStartActual();
 
@@ -275,7 +285,7 @@ public class Encounter {
      * For actual encounters, just send the end event.
      */
     private void signalEnd(Instant endAt) {
-        Log.d(TAG, "signalEnd");
+        Debug.log(TAG, "signalEnd", "encounter", this);
         HashMap<String, Object> event = this.toMap();
         switch (encounterType) {
             case TRANSIENT:

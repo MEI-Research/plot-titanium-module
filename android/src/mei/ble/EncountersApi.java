@@ -1,5 +1,9 @@
 package mei.ble;
 
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
+
 import com.meiresearch.android.plotprojects.EMADataAccess;
 import org.appcelerator.kroll.KrollDict;
 import org.appcelerator.kroll.KrollProxy;
@@ -17,6 +21,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.LinkedTransferQueue;
 
+import mei.ble.mei.Debug;
+
+@RequiresApi(api = Build.VERSION_CODES.O)
 @Kroll.proxy() // doesn't work:!(propertyAccessors={"transientTimeoutSecs", "actualTimeoutSecs"})
 public class EncountersApi extends KrollProxy {
     private static final String TAG = EncountersApi.class.getName();
@@ -74,7 +81,11 @@ public class EncountersApi extends KrollProxy {
             HashMap<String, Object> evt = undeliveredEncounterEvents.poll();
             if (evt == null)
                 break;
-            result.put(new JSONObject(evt));
+            try {
+                result.put(new JSONObject(evt));
+            } catch (Exception e) {
+                Debug.log(TAG, "Can't convert to JSON" , "evt", evt);
+            }
         }
         return result.toString();
     }
@@ -84,7 +95,7 @@ public class EncountersApi extends KrollProxy {
         synchronized (undeliveredEncounterEvents) {
             undeliveredEncounterEvents.add(new HashMap<String,Object>(event));
         }
-        boolean hasListener = this.fireEvent("ble.event", event);
+        boolean hasListener = this.fireEvent("ble.event", null);
         if (!hasListener) {
             Log.w(TAG, "No listener for event: " + event);
         }
