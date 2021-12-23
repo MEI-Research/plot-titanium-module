@@ -1,4 +1,4 @@
-package mei.ble.mei;
+package mei;
 
 import android.os.Build;
 import android.util.Log;

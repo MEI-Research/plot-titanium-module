@@ -6,10 +6,9 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import mei.ble.mei.Debug;
+import mei.Debug;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class Friend {

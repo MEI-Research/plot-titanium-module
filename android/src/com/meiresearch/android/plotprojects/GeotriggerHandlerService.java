@@ -19,8 +19,7 @@ import mei.ble.Encounter;
 import com.plotprojects.retail.android.GeotriggerHandlerUtil;
 import com.plotprojects.retail.android.Geotrigger;
 
-import mei.ble.BeaconEvent;
-import mei.ble.mei.Debug;
+import mei.Debug;
 
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;

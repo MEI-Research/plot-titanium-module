@@ -1,7 +1,6 @@
 package mei.ble;
 
 import android.os.Build;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
@@ -9,7 +8,7 @@ import com.plotprojects.retail.android.Geotrigger;
 
 import java.time.Instant;
 
-import mei.ble.mei.Debug;
+import mei.Debug;
 
 /**
  * A wrapper for Geotriggers that are beacon detections

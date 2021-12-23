@@ -4,24 +4,20 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
-import com.meiresearch.android.plotprojects.EMADataAccess;
-import org.appcelerator.kroll.KrollDict;
 import org.appcelerator.kroll.KrollProxy;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.LinkedTransferQueue;
 
-import mei.ble.mei.Debug;
+import mei.Debug;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 @Kroll.proxy() // doesn't work:!(propertyAccessors={"transientTimeoutSecs", "actualTimeoutSecs"})

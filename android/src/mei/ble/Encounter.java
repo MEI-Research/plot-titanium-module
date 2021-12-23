@@ -14,7 +14,7 @@ import com.meiresearch.android.plotprojects.GeotriggerHandlerService;
 import com.plotprojects.retail.android.Geotrigger;
 
 import mei.MapUtil;
-import mei.ble.mei.Debug;
+import mei.Debug;
 
 
 /**
