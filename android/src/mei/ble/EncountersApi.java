@@ -8,9 +8,11 @@ import org.appcelerator.kroll.KrollProxy;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
 
+import org.appcelerator.titanium.util.TiConvert;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -51,16 +53,23 @@ public class EncountersApi extends KrollProxy {
         minDurationSecs = val;
     }
 
-    public long transientTimeoutSecs = 2 * 60;
+    public Duration transientTimeout = Duration.ofMinutes(2);
     @Kroll.setProperty
-    public void setTransientTimeoutSecs(long val) {
-        transientTimeoutSecs = val;
+    public void setTransientTimeoutSecs(Object val) {
+        transientTimeout = Duration.ofSeconds(Math.round(TiConvert.toDouble(val)));
     }
 
-    public long actualTimeoutSecs = 10 * 60;
+    public Duration actualTimeout = Duration.ofMinutes(10);
     @Kroll.setProperty
-    public void setActualTimeoutSecs(long val) {
-        actualTimeoutSecs = val;
+    public void setActualTimeoutSecs(Object val) {
+        actualTimeout = Duration.ofSeconds(Math.round(TiConvert.toDouble(val)));
+    }
+
+    public Duration maxEncounterDuration = Duration.ofHours(8);
+    @Kroll.setProperty
+    public void setMaxEncounterDurationHours(Object hours) {
+        maxEncounterDuration = Duration.ofSeconds(Math.round(TiConvert.toDouble(hours) *  3600));
+        Log.debug(TAG, "DEBUG>>>>>>> setMaxEncounterDurationHours," + hours + ", " + maxEncounterDuration);
     }
 
     /**

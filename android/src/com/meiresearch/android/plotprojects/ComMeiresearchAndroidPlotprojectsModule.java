@@ -33,6 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
 
 import com.plotprojects.retail.android.NotificationTrigger;
 import com.plotprojects.retail.android.FilterableNotification;
@@ -54,6 +57,7 @@ import com.meiresearch.android.plotprojects.GeotriggerBatches.GeotriggersAndId;
  *
  * TODO: most of these are not needed. Get rid of them
  */
+@RequiresApi(api = Build.VERSION_CODES.O)
 @Kroll.module(name="ComMeiresearchAndroidPlotprojects", id="com.meiresearch.android.plotprojects")
 public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 
@@ -274,6 +278,10 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 //		return result;
 //	}
 
+	/*
+	 * TODO: this is not used?
+	 * @param batch
+	 * /
 	@Kroll.method
 	public void sendNotifications(HashMap<String, Object> batch) {
 		Log.d(LCAT, "sendNotifications");
@@ -284,12 +292,13 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		List<FilterableNotification> notificationsToSend = JsonUtil.getNotifications(jsonNotifications, notifications);
 		NotificationBatches.sendBatch(filterId, notificationsToSend);
 	}
+	*/
 
 	@Kroll.method
 	public HashMap<String, Object> popGeotriggers() {
 		GeotriggersAndId geotriggersAndId = GeotriggerBatches.popBatch();
 
-		HashMap<String, Object> result = new HashMap<String, Object>();
+		HashMap<String, Object> result = new HashMap<>();
 		result.put("handlerId", geotriggersAndId.getId());
 		result.put("geotriggers", JsonUtil.geotriggersToMap(geotriggersAndId.getGeotriggers()));
 		return result;

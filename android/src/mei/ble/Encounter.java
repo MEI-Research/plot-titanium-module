@@ -26,6 +26,16 @@ import mei.Debug;
  * and end info; for actual encounters, we send the notification and the event to EMA after min_dur has passed, then
  * another event when the actual encounter expires.
  *
+ * # Terminology
+ *
+ * actual encounter - an encounter that has lasted longer than minDuaration (now >= startTime + minDur)
+ * spurious enter - an enter geotrigger for a friend with an ongoing encounter. These don't happen
+ *     with interaction tracer, but the code should handle them just in case.
+ * spurious exit - an exit shortly followed by an enter for the same friend. These are ignored except
+ *    for updating the encounter statistics.
+ * potential exit - an exit that may or may not be spurious. We must wait.
+ * transient encounter - an encounter that has not lasted minDuration (now < startTime + minDur)
+ *
  * TODO: persist & reload encounterByKey
  * What if a transient encounter gets no Enters until after
  *
@@ -35,13 +45,10 @@ import mei.Debug;
 public class Encounter {
 
     private static final String TAG = Encounter.class.getName();
-
-
     ////////////////////////
     //// Static features
 
     static enum EncounterType { TRANSIENT, ACTUAL }
-
 
     /** Active encounter map */
     static Map<String,Encounter> encounterByFriendName = new HashMap<String,Encounter>();
@@ -68,6 +75,8 @@ public class Encounter {
      * Update each active encounter to reflect that no geotrigger was received since the previous one.
      * This must be called right before handling any new Enter events in a batch.
      * @param now - for test we can mess with time
+     *
+     * TODO: this could be eliminated now that EmaNotification works
      */
     public static void updateAllForPassedTime(Instant now) {
         Log.d(TAG, "updateAllForPassedTime, keys= " + encounterByFriendName.keySet() + ", now=" + now);
@@ -106,9 +115,9 @@ public class Encounter {
         if (eventTime == null) {
             eventTime = Instant.now();
         }
-        Encounter currenyEncounter = encounterByFriendName.get(friend.name);
-        if (currenyEncounter != null) {
-            currenyEncounter.updateForBeaconEvent(beaconEvent, eventTime);
+        Encounter currentEncounter = encounterByFriendName.get(friend.name);
+        if (currentEncounter != null) {
+            currentEncounter.updateForBeaconEvent(beaconEvent, eventTime);
             return true;
         }
 
@@ -122,7 +131,7 @@ public class Encounter {
             encounterByFriendName.put(
                     friend.name,
                     new Encounter(friend, eventTime));
-            Debug.log(TAG, "DEBUG>>> is enter: started new encounter",
+            Debug.log(TAG, "started new encounter",
                     encounterByFriendName, "encounterByFriendName");
         }
         return true;
@@ -171,7 +180,7 @@ public class Encounter {
     }
 
 
-    ////////////////////////
+    ////////////////////////////////////////////////
     //// State transition
 
     /** Start new encounter */
@@ -180,70 +189,99 @@ public class Encounter {
         initialEnter = eventTime;
         mostRecentEnter = eventTime;
 
+        EncounterUpdateReceiver.scheduleNextUpdateBefore(becomesActualAt());
+
         clearStats();
         Log.d(TAG, "Start " + this.toString() + " at " + eventTime);
     }
 
     /** Apply clock ticks */
     void updateForCurrentTime(Instant now) {
-        Log.d(TAG, "updateForCurrentTime: " + this);
+        //Log.d(TAG, "updateForCurrentTime: " + this);
 
-        switch(encounterType) {
+        if (recentExit.isPresent()) {
+            Instant applyExitAt  = recentExit.get().plus(
+                    isTransient() ?
+                            EncountersApi.instance.transientTimeout :
+                            EncountersApi.instance.actualTimeout
+            );
+            if (now.isAfter(applyExitAt))  {
+                terminateEncounter(recentExit.get());
+            }
+            else {
+                EncounterUpdateReceiver.scheduleNextUpdateBefore(applyExitAt);
+            }
+        }
+        if (isTransient()) {
+            if (now.isAfter(becomesActualAt())) {
+                becomeActual();
+            }
+            else {
+                EncounterUpdateReceiver.scheduleNextUpdateBefore(becomesActualAt());
+            }
+        }
+        else { // isActual
+            if (now.isAfter(ageOutAt())) {
+                Debug.log(TAG, "aging out", "encounter", this);
+                terminateEncounter(ageOutAt());
+            }
+            else {
+                EncounterUpdateReceiver.scheduleNextUpdateBefore(ageOutAt());
+            }
+        }
+        //Debug.log(TAG, "updateForCurrentTime result", "encounter", this.toString());
+    }
+
+    void terminateEncounter(Instant endTime) {
+        Debug.log(TAG, "terminateEncounter", "encounter", this);
+        HashMap<String, Object> event = this.toMap();
+        switch (encounterType) {
             case TRANSIENT:
-                if (recentExit.isPresent()) {
-                    Instant endTransientAt = recentExit.get().plusSeconds(EncountersApi.instance.transientTimeoutSecs);
-                    if (now.isAfter(endTransientAt)) {
-                        Debug.log(TAG, "will signalEnd");
-                        signalEnd(recentExit.get());
-                        encounterByFriendName.remove(friend.name);
-                    }
-                } else if (now.isAfter(becomesActualAt())) {
-                    Debug.log(TAG, "will signalStartActual");
-                    encounterType = EncounterType.ACTUAL;
-                    signalStartActual();
+                event.put("event_type", "start_transient_encounter");
+                event.put("timestamp", EncountersApi.instance.encodeTimestamp(initialEnter));
+                EncountersApi.instance.sendEmaEvent(event);
 
-                    clearStats();
-                }
+                event.put("event_type", "end_transient_encounter");
                 break;
-
             case ACTUAL:
-                Instant endActualAt = mostRecentEnter.plusSeconds(EncountersApi.instance.actualTimeoutSecs);
-                if (now.isAfter(endActualAt)) {
-                    signalEnd(endActualAt);
-                    //signalEnd(mostRecentEnter.plusSeconds(EncountersApi.instance.minDurationSecs));
-                    encounterByFriendName.remove(friend.name);
-                }
+                event.put("event_type", "end_actual_encounter");
                 break;
         }
-        Log.d(TAG, "updateForCurrentTime result: " + this);
+        event.put("timestamp", EncountersApi.instance.encodeTimestamp(endTime));
+        EncountersApi.instance.sendEmaEvent(event);
+        encounterByFriendName.remove(friend.name);
+    }
+
+    void becomeActual() {
+        Debug.log(TAG, "transient encounter becomes actual");
+        encounterType = EncounterType.ACTUAL;
+        signalStartActual();
+
+        clearStats();
+        EncounterUpdateReceiver.scheduleNextUpdateBefore(ageOutAt());
     }
 
     /** Apply a geotrigger */
     void updateForBeaconEvent(BeaconEvent beaconEvent, Instant now) {
         Log.d(TAG, "updateForBeaconEvent:" + this);
         if (beaconEvent.isBeaconExit()) {
-            if (encounterType == EncounterType.TRANSIENT) {
-                // Start the clock to end the transient encounter
-                recentExit = Optional.of(now);
-            }
-
-        } else if (beaconEvent.isBeaconEnter()) {
-            double deltaT = -1;
+            recentExit = Optional.of(now);
+        }
+        else { // isBeaconEnter()
             if (recentExit.isPresent()) {
-                Log.d(TAG, "Resume from exiting ");
+                Log.d(TAG, "Resume from spurious exit ");
 
-                // Update stats on spurious Exits for start_* rows
                 updateStats(now, recentExit.get());
-
                 recentExit = Optional.empty();
             }
-            if (encounterType == EncounterType.ACTUAL) {
+            if (isActual()) {
                 //update stats on spurious Enters for end_actual rows
                 updateStats(now, mostRecentEnter);
             }
             mostRecentEnter = now;
         }
-        Log.d(TAG, "updateForGeotrigger result: " + this);
+        updateAllForPassedTime(now);
+        Debug.log(TAG, "updateForBeaconEvent", "encounter", this);
     }
 
     private void clearStats() {
@@ -261,6 +299,24 @@ public class Encounter {
         numDeltaT += 1;
     }
 
+
+    ////////////////////////////////////////////////
+    //// misc
+
+    public boolean isActual() {
+        return encounterType == EncounterType.ACTUAL;
+    }
+    public boolean isTransient() {
+        return encounterType == EncounterType.TRANSIENT;
+    }
+
+    /**
+     * Time when encounter reaches maximum duration
+     * @return
+     */
+    private Instant ageOutAt() {
+        return initialEnter.plus(EncountersApi.instance.maxEncounterDuration);
+    }
 
     ///////////////////////////
     //// Signal events for EMA
@@ -308,8 +364,8 @@ public class Encounter {
         map.put("friend_name", friend.name);
         map.put("kontakt_beacon_id", friend.tag);
         map.put("min_duration_secs", EncountersApi.instance.minDurationSecs);
-        map.put("actual_enc_timeout_secs", EncountersApi.instance.actualTimeoutSecs);
-        map.put("transient_enc_timeout_secs", EncountersApi.instance.transientTimeoutSecs);
+        map.put("actual_enc_timeout_secs", EncountersApi.instance.actualTimeout.getSeconds());
+        map.put("transient_enc_timeout_secs", EncountersApi.instance.transientTimeout.getSeconds());
         map.put("max_detect_event_delta_t", maxDeltaT);
         map.put("num_events", numDeltaT);
         if (numDeltaT > 0) {

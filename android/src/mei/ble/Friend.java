@@ -27,7 +27,6 @@ public class Friend {
         return null;
     }
     public static void setFriendList(String friendCsv) {
-        Log.d(TAG, "setFriendList(" + friendCsv + ")");
         Debug.log(TAG, "setFriendList", "friendCsv", friendCsv);
         friendList.clear();
         for (String dsv: friendCsv.split(", *")) {
