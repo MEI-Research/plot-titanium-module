@@ -257,6 +257,9 @@ public class Encounter {
         encounterType = EncounterType.ACTUAL;
         signalStartActual();
 
+        // TODO: fix this to allow enter & exit notifications
+        GeotriggerHandlerService.sendNotification("enter");
+
         clearStats();
         EncounterUpdateReceiver.scheduleNextUpdateBefore(ageOutAt());
     }
