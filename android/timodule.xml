@@ -24,6 +24,15 @@
         </receiver>
         <receiver android:name=".EMANotificationBroadcastReceiver" android:exported="true" android:enabled="true"/>
         <receiver android:name="mei.ble.EncounterUpdateReceiver" android:exported="true" android:enabled="true"/>
+        <!--
+            Start detection on boot.
+            TODO: cherry-pick this to plotproject/rc!
+        -->
+        <receiver android:name="mei.ble.OnBoot">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
       </application>
     </manifest>
   </android>

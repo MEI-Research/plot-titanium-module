@@ -1,29 +1,33 @@
 package mei.ble;
 
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
 import com.plotprojects.retail.android.Geotrigger;
 
 import java.time.Instant;
+import java.util.List;
 
 import mei.Debug;
 
 /**
- * A wrapper for Geotriggers that are beacon detections
+ * A wrapper for Geotriggers that are beacon detections.
+ * Hides the details of how PP stores things in the Geotrigger.
+ * TODO: move all friend-stuff to Encounter class.
  */
 @RequiresApi(api = Build.VERSION_CODES.O)
 public final class BeaconEvent {
     private static final String TAG = BeaconEvent.class.getName();
 
-    enum MatchPayloadKey {
+    private enum MatchPayloadKey {
         triggerTimeInMilli,
         majorId,
         minorId
     }
 
-    final Geotrigger geotrigger;
+    private final Geotrigger geotrigger;
 
     /**
      * @param geotrigger
@@ -55,7 +59,15 @@ public final class BeaconEvent {
     public Friend getFriend() {
         String majorId = geotrigger.getMatchPayload().get(MatchPayloadKey.majorId.toString());
         String minorId = geotrigger.getMatchPayload().get(MatchPayloadKey.minorId.toString());
-        return Friend.forBeacon(majorId, minorId);
+        if (majorId == null || minorId == null)
+            return null;
+        final List<Friend> friendList = EncountersApi.friendList;
+        Log.d(TAG, "forBeacon: " + majorId + ", " + minorId + ", " + friendList.toString());
+        for (Friend friend : friendList) {
+            if (friend.majorId.equals(majorId) && friend.minorId.endsWith(minorId))
+                return friend;
+        }
+        return null;
     }
 
     public Instant getTime() {

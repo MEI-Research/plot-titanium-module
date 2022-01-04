@@ -9,28 +9,56 @@ import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
 
 import org.appcelerator.titanium.util.TiConvert;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.LinkedTransferQueue;
 
 import mei.Debug;
+import mei.EmaMessageQueue;
+import mei.PersistentProperties;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 @Kroll.proxy() // doesn't work:!(propertyAccessors={"transientTimeoutSecs", "actualTimeoutSecs"})
 public class EncountersApi extends KrollProxy {
     private static final String TAG = EncountersApi.class.getName();
 
-    public static final String BLE_EVENTS_PROP = "ble.events";
+    public static final EmaMessageQueue msgQueue = new EmaMessageQueue("");
+
+
+    enum PropKey {
+        FRIEND_LIST,
+        MIN_DUR,
+        MAX_DUR,
+        ACTUAL_TIMEOUT,
+        TRANSIENT_TIMEOUT,
+    }
+
+    public static List<Friend> friendList = new ArrayList<Friend>();
+
+    private static void _setFriendList(String friendCsv) {
+        friendList.clear();
+        if (friendCsv.isEmpty())
+            return;
+        for (String dsv: friendCsv.split(", *")) {
+            friendList.add(new Friend(dsv));
+        }
+    }
+
+    private final PersistentProperties<PropKey> props =
+            new PersistentProperties<>(PropKey.class);
 
     /** Singleton */
     public static final EncountersApi instance = new EncountersApi();
-    private EncountersApi() {}
+    private EncountersApi() {
+        try {
+            _setFriendList(props.getString(PropKey.FRIEND_LIST, ""));
+        }
+        catch(Exception ex) {
+            Log.d(TAG, "error creating", ex);
+        }
+    }
 
     /**
      * Undelivered encounters
@@ -41,35 +69,48 @@ public class EncountersApi extends KrollProxy {
 
     @Kroll.setProperty
     public void setFriendList(String friendCsv) {
-        Log.d(TAG, "DEBUG###### setFriendList=" + friendCsv);
-        Friend.setFriendList(friendCsv);
+        Debug.log(TAG, "setFriendList", "friendCsv", friendCsv);
+        props.setString(PropKey.FRIEND_LIST, friendCsv);
+
+        _setFriendList(friendCsv);
+        Log.d(TAG, "DEBUG>>>>>>> setFriendlist result=" + friendList);
     }
 
-    // Default values for testing
-    public long minDurationSecs = 5 * 60;
+    public Duration getMinDuration() {
+        return Duration.ofSeconds(getMinDurationSecs());
+    }
+    public long getMinDurationSecs() {
+        return props.getLong(PropKey.MIN_DUR, 5L * 60);
+    }
     @Kroll.setProperty
     public void setMinDurationSecs(long val) {
-        Log.d(TAG, "DEBUG###### setMin  DurationSecs " + val);
-        minDurationSecs = val;
+        props.setLong(PropKey.MIN_DUR, val);
     }
 
-    public Duration transientTimeout = Duration.ofMinutes(2);
+    public Duration getTransientTimeout() {
+        return Duration.ofSeconds(props.getLong(PropKey.TRANSIENT_TIMEOUT, 2 * 60L));
+    }
     @Kroll.setProperty
-    public void setTransientTimeoutSecs(Object val) {
-        transientTimeout = Duration.ofSeconds(Math.round(TiConvert.toDouble(val)));
+    public void setTransientTimeoutSecs(long val) {
+        props.setLong(PropKey.TRANSIENT_TIMEOUT, val);
     }
 
-    public Duration actualTimeout = Duration.ofMinutes(10);
+    public Duration getActualTimeout() {
+        return Duration.ofSeconds(props.getLong(PropKey.ACTUAL_TIMEOUT, 10 * 60L));
+    }
     @Kroll.setProperty
-    public void setActualTimeoutSecs(Object val) {
-        actualTimeout = Duration.ofSeconds(Math.round(TiConvert.toDouble(val)));
+    public void setActualTimeoutSecs(long val) {
+        props.setLong(PropKey.ACTUAL_TIMEOUT, val);
     }
 
-    public Duration maxEncounterDuration = Duration.ofHours(8);
+    private Duration maxEncounterDuration = Duration.ofHours(8);
+    public Duration getMaxEncounterDuration() {
+        return Duration.ofSeconds(props.getLong(PropKey.MAX_DUR, 8L * 60 * 60));
+    }
     @Kroll.setProperty
     public void setMaxEncounterDurationHours(Object hours) {
-        maxEncounterDuration = Duration.ofSeconds(Math.round(TiConvert.toDouble(hours) *  3600));
-        Log.debug(TAG, "DEBUG>>>>>>> setMaxEncounterDurationHours," + hours + ", " + maxEncounterDuration);
+        long seconds = Math.round(TiConvert.toDouble(hours) * 3600);
+        props.setLong(PropKey.MAX_DUR, seconds);
     }
 
     /**
@@ -81,34 +122,30 @@ public class EncountersApi extends KrollProxy {
     public String fetchEvents() {
         Encounter.updateAllForPassedTime(Instant.now());
         Log.d(TAG, "fetchEvents: updated size=" + undeliveredEncounterEvents.size());
-        JSONArray result = new JSONArray();
-        while (true) synchronized (undeliveredEncounterEvents) {
-            HashMap<String, Object> evt = undeliveredEncounterEvents.poll();
-            if (evt == null)
-                break;
-            try {
-                result.put(new JSONObject(evt));
-            } catch (Exception e) {
-                Debug.log(TAG, "Can't convert to JSON" , "evt", evt);
-            }
-        }
-        return result.toString();
+        return msgQueue.fetchMessages();
+//        JSONArray result = new JSONArray();
+//        while (true) synchronized (undeliveredEncounterEvents) {
+//            HashMap<String, Object> evt = undeliveredEncounterEvents.poll();
+//            if (evt == null)
+//                break;
+//            try {
+//                result.put(new JSONObject(evt));
+//            } catch (Exception e) {
+//                Debug.log(TAG, "Can't convert to JSON" , "evt", evt);
+//            }
+//        }
+//        return result.toString();
     }
 
     public void sendEmaEvent(HashMap<String,Object> event) {
         Log.d(TAG, "sendEmaEvent: " + event);
-        synchronized (undeliveredEncounterEvents) {
-            undeliveredEncounterEvents.add(new HashMap<String,Object>(event));
-        }
+        msgQueue.sendMessage(event);
+//        synchronized (undeliveredEncounterEvents) {
+//            undeliveredEncounterEvents.add(new HashMap<String,Object>(event));
+//        }
         boolean hasListener = this.fireEvent("ble.event", null);
         if (!hasListener) {
             Log.w(TAG, "No listener for event: " + event);
         }
     }
-
-    public String encodeTimestamp(Instant timestamp) {
-        return OffsetDateTime.ofInstant(timestamp, ZoneId.systemDefault()).toString();
-    }
-
-    public enum EmaEvent { start_actual_encounter, end_actual_encounter, transient_encounter}
 }

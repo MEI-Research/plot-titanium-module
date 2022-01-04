@@ -12,7 +12,6 @@ import mei.ble.Encounter;
 import mei.ble.EncountersApi;
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
-import org.appcelerator.kroll.KrollRuntime;
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.kroll.common.TiConfig;
 
@@ -27,22 +26,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
 import com.plotprojects.retail.android.NotificationTrigger;
-import com.plotprojects.retail.android.FilterableNotification;
 import com.plotprojects.retail.android.Geotrigger;
-import com.plotprojects.retail.android.OpenUriReceiver;
 import com.plotprojects.retail.android.Plot;
-import com.plotprojects.retail.android.PlotConfiguration;
 import com.plotprojects.retail.android.SentGeotrigger;
 import com.plotprojects.retail.android.SentNotification;
 
@@ -116,9 +108,15 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		}
 		catch (Exception ex) {
 			Log.e(LCAT, "PlotAddon.register failed, ignoring", ex);
-			Encounter.logToEma("TPlotAddon.register failed", null);
+            EncountersApi.msgQueue.logToEma("TPlotAddon.register failed", (HashMap<String, Object>) null);
+//        HashMap<String, Object> msg = new HashMap<>();
+//        msg.put("event_type", "message");
+//        msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
+//        msg.put("message", message);
+//        if (more_data != null) msg.put("more_data", more_data);
+//        EncountersApi.instance.sendEmaEvent(msg);
 
-		}
+        }
 
 		isEnabled = Plot.isEnabled();
 		isGeoTriggerHandlerEnabled = SettingsUtil.isGeotriggerHandlerEnabled();

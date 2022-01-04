@@ -13,7 +13,7 @@ import androidx.annotation.RequiresApi;
 import com.meiresearch.android.plotprojects.GeotriggerHandlerService;
 import com.plotprojects.retail.android.Geotrigger;
 
-import mei.MapUtil;
+import mei.EmaMessageQueue;
 import mei.Debug;
 
 
@@ -24,7 +24,7 @@ import mei.Debug;
  * Only actual encounters trigger a notification and survey.
  * Therefore: for transient encounters, we send one event to EMA when the transient encounter ends which includes start
  * and end info; for actual encounters, we send the notification and the event to EMA after min_dur has passed, then
- * another event when the actual encounter expires.
+ * another event when the actual  encounter expires.
  *
  * # Terminology
  *
@@ -54,16 +54,18 @@ public class Encounter {
     static Map<String,Encounter> encounterByFriendName = new HashMap<String,Encounter>();
 
     public static void logToEma(String message, HashMap<String, Object> more_data) {
-        HashMap<String, Object> msg = new HashMap<>();
-        msg.put("event_type", "message");
-        msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
-        msg.put("message", message);
-        if (more_data != null) msg.put("more_data", more_data);
-        EncountersApi.instance.sendEmaEvent(msg);
+        EncountersApi.msgQueue.logToEma(message, more_data);
+//        HashMap<String, Object> msg = new HashMap<>();
+//        msg.put("event_type", "message");
+//        msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
+//        msg.put("message", message);
+//        if (more_data != null) msg.put("more_data", more_data);
+//        EncountersApi.instance.sendEmaEvent(msg);
     }
 
     public static void logEma(String msg, Object... keyValues) {
-        logToEma(msg, MapUtil.mapFromArray(keyValues));
+        EncountersApi.msgQueue.logToEma(msg, keyValues);
+        //logToEma(msg, MapUtil.mapFromArray(keyValues));
     }
 
     public static void reset() {
@@ -102,7 +104,7 @@ public class Encounter {
         if (beaconEvent == null) {
             Debug.log(TAG, "not a friend beacon event",
                     "matchPayload", geotrigger.getMatchPayload(),
-                    "friendList", Friend.friendList.toString());
+                    "friendList", EncountersApi.friendList.toString());
             return false;
         }
         Friend friend = beaconEvent.getFriend();
@@ -167,7 +169,7 @@ public class Encounter {
     double maxDeltaT = -1;
 
     Instant becomesActualAt() {
-        return initialEnter.plusSeconds(EncountersApi.instance.minDurationSecs);
+        return initialEnter.plus(EncountersApi.instance.getMinDuration());
     }
 
     double avgDeltaT() {
@@ -202,8 +204,8 @@ public class Encounter {
         if (recentExit.isPresent()) {
             Instant applyExitAt  = recentExit.get().plus(
                     isTransient() ?
-                            EncountersApi.instance.transientTimeout :
-                            EncountersApi.instance.actualTimeout
+                            EncountersApi.instance.getTransientTimeout() :
+                            EncountersApi.instance.getActualTimeout()
             );
             if (now.isAfter(applyExitAt))  {
                 terminateEncounter(recentExit.get());
@@ -238,7 +240,7 @@ public class Encounter {
         switch (encounterType) {
             case TRANSIENT:
                 event.put("event_type", "start_transient_encounter");
-                event.put("timestamp", EncountersApi.instance.encodeTimestamp(initialEnter));
+                event.put("timestamp", EmaMessageQueue.encodeTimestamp(initialEnter));
                 EncountersApi.instance.sendEmaEvent(event);
 
                 event.put("event_type", "end_transient_encounter");
@@ -247,7 +249,7 @@ public class Encounter {
                 event.put("event_type", "end_actual_encounter");
                 break;
         }
-        event.put("timestamp", EncountersApi.instance.encodeTimestamp(endTime));
+        event.put("timestamp", EmaMessageQueue.encodeTimestamp(endTime));
         EncountersApi.instance.sendEmaEvent(event);
         encounterByFriendName.remove(friend.name);
     }
@@ -318,7 +320,7 @@ public class Encounter {
      * @return
      */
     private Instant ageOutAt() {
-        return initialEnter.plus(EncountersApi.instance.maxEncounterDuration);
+        return initialEnter.plus(EncountersApi.instance.getMaxEncounterDuration());
     }
 
     ///////////////////////////
@@ -333,8 +335,8 @@ public class Encounter {
 
         HashMap<String, Object> event = this.toMap();
         event.put("event_type", "start_actual_encounter");
-        event.put("timestamp", EncountersApi.instance.encodeTimestamp(initialEnter));
-        event.put("notif_at", EncountersApi.instance.encodeTimestamp(Instant.now()));
+        event.put("timestamp", EmaMessageQueue.encodeTimestamp(initialEnter));
+        event.put("notif_at", EmaMessageQueue.encodeTimestamp(Instant.now()));
         EncountersApi.instance.sendEmaEvent(event);
     }
 
@@ -349,7 +351,7 @@ public class Encounter {
         switch (encounterType) {
             case TRANSIENT:
                 event.put("event_type", "start_transient_encounter");
-                event.put("timestamp", EncountersApi.instance.encodeTimestamp(initialEnter));
+                event.put("timestamp", EmaMessageQueue.encodeTimestamp(initialEnter));
                 EncountersApi.instance.sendEmaEvent(event);
 
                 event.put("event_type", "end_transient_encounter");
@@ -358,7 +360,7 @@ public class Encounter {
                 event.put("event_type", "end_actual_encounter");
                 break;
         }
-        event.put("timestamp", EncountersApi.instance.encodeTimestamp(endAt));
+        event.put("timestamp", EmaMessageQueue.encodeTimestamp(endAt));
         EncountersApi.instance.sendEmaEvent(event);
     }
 
@@ -366,9 +368,9 @@ public class Encounter {
         HashMap<String,Object>  map = new HashMap<String,Object> ();
         map.put("friend_name", friend.name);
         map.put("kontakt_beacon_id", friend.tag);
-        map.put("min_duration_secs", EncountersApi.instance.minDurationSecs);
-        map.put("actual_enc_timeout_secs", EncountersApi.instance.actualTimeout.getSeconds());
-        map.put("transient_enc_timeout_secs", EncountersApi.instance.transientTimeout.getSeconds());
+        map.put("min_duration_secs", EncountersApi.instance.getMinDuration().getSeconds());
+        map.put("actual_enc_timeout_secs", EncountersApi.instance.getActualTimeout().getSeconds());
+        map.put("transient_enc_timeout_secs", EncountersApi.instance.getTransientTimeout().getSeconds());
         map.put("max_detect_event_delta_t", maxDeltaT);
         map.put("num_events", numDeltaT);
         if (numDeltaT > 0) {

@@ -20,6 +20,7 @@ import com.plotprojects.retail.android.GeotriggerHandlerUtil;
 import com.plotprojects.retail.android.Geotrigger;
 
 import mei.Debug;
+import mei.ble.EncountersApi;
 
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
@@ -56,6 +57,21 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
     public static final String REDUCE_BLETRIGGER_FREQUENCY = "plot.reduceBLETriggerFrequency";
     public static final String SURVEY_TRIGGERED = "plot.surveyTriggered";
     public static final String DWELL_MINUTES = "plot.projects_dwell_minutes";
+
+    /**
+     * Start listing after reboot
+     * @param context
+     */
+    public static void onBoot(Context context) {
+        Debug.log(TAG, "onBoot starting");
+        Intent intent = new Intent(context, GeotriggerHandlerService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
+        // TODO: initialize PP again?
+    }
 
     public void onReceive(Context context, Intent intent) {
         Instant eventTime = Instant.now();
@@ -136,6 +152,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
               ", MatchId="+          geotrigger.getMatchId() +
               ", MatchRange="+       geotrigger.getMatchRange() +
               ", matchPayload=" + geotrigger.getMatchPayload() +
+              ", deliver delay (ms)=" + (geotrigger.getMatchPayload()) +
+                      // TODO: add deliver delay (now - matchPayload.triggerTimeInMillis) in millis
               ", RegionId="+         geotrigger.getRegionId() +
               ", RegionType="+       geotrigger.getRegionType() +
               ", ShortId="+          geotrigger.getShortId() +
@@ -160,7 +178,13 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         more_data.put("trigger", geotrigger.getTrigger());
         more_data.put("triggerProperties", geotrigger.getTriggerProperties());
         more_data.put("geotrig.toString", geotrigger.toString());
-        Encounter.logToEma("DEBUG> geotrigger details", more_data);
+        EncountersApi.msgQueue.logToEma("DEBUG> geotrigger details", more_data);
+//        HashMap<String, Object> msg = new HashMap<>();
+//        msg.put("event_type", "message");
+//        msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
+//        msg.put("message", message);
+//        if (more_data != null) msg.put("more_data", more_data);
+//        EncountersApi.instance.sendEmaEvent(msg);
     }
 
     // return true if this batch of triggers should be iterated over and worked on, based on time filtering.
