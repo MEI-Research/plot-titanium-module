@@ -17,6 +17,8 @@ import com.meiresearch.android.plotprojects.GeotriggerHandlerService;
  * For now, just ensure detection resumes. This requires persisting friend list and configure PP
  * Should active encounters survive reboot?
  * Persist & restore alarms.
+ *
+ * @see https://stackoverflow.com/questions/7690350/android-start-service-on-boot
  */
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class OnBoot extends BroadcastReceiver {
