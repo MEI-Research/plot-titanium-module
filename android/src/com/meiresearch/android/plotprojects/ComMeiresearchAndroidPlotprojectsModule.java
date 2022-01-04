@@ -109,13 +109,6 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		catch (Exception ex) {
 			Log.e(LCAT, "PlotAddon.register failed, ignoring", ex);
             EncountersApi.msgQueue.logToEma("TPlotAddon.register failed", (HashMap<String, Object>) null);
-//        HashMap<String, Object> msg = new HashMap<>();
-//        msg.put("event_type", "message");
-//        msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
-//        msg.put("message", message);
-//        if (more_data != null) msg.put("more_data", more_data);
-//        EncountersApi.instance.sendEmaEvent(msg);
-
         }
 
 		isEnabled = Plot.isEnabled();
