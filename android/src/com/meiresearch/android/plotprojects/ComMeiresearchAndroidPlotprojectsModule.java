@@ -78,14 +78,13 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 	// Methods
 	@Kroll.method()
 	public void start() {
-		Encounter.reset();
+		//Encounter.reset();
 	}
 
 	@Kroll.method()
 	public void stop() {
 		// should be called on logout. Don't collect encounters
 		// Plot.disable();
-		Encounter.reset();
 	}
 
 	/**

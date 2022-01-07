@@ -13,6 +13,11 @@ import androidx.annotation.RequiresApi;
 import com.meiresearch.android.plotprojects.GeotriggerHandlerService;
 import com.plotprojects.retail.android.Geotrigger;
 
+import org.appcelerator.titanium.TiApplication;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import mei.EmaMessageQueue;
 import mei.Debug;
 
@@ -45,46 +50,49 @@ import mei.Debug;
 public class Encounter {
 
     private static final String TAG = Encounter.class.getName();
+
+    public EncounterType getEncounterType() {
+        return Instant.now().isAfter(becomesActualAt())
+                ? EncounterType.ACTUAL
+                : EncounterType.TRANSIENT;
+    }
+
     ////////////////////////
     //// Static features
 
     static enum EncounterType { TRANSIENT, ACTUAL }
 
     /** Active encounter map */
-    static Map<String,Encounter> encounterByFriendName = new HashMap<String,Encounter>();
-
-    public static void logToEma(String message, HashMap<String, Object> more_data) {
-        EncountersApi.msgQueue.logToEma(message, more_data);
-//        HashMap<String, Object> msg = new HashMap<>();
-//        msg.put("event_type", "message");
-//        msg.put("timestamp", EncountersApi.instance.encodeTimestamp(Instant.now()));
-//        msg.put("message", message);
-//        if (more_data != null) msg.put("more_data", more_data);
-//        EncountersApi.instance.sendEmaEvent(msg);
+    private static Map<String,Encounter> _encounterByFriendName = null;
+    private static Map<String,Encounter> encounterByFriendName() {
+        if (_encounterByFriendName == null) {
+             _encounterByFriendName = new HashMap<String,Encounter>();
+             restoreEncounters();
+        }
+        return _encounterByFriendName;
     }
 
-    public static void logEma(String msg, Object... keyValues) {
-        EncountersApi.msgQueue.logToEma(msg, keyValues);
-        //logToEma(msg, MapUtil.mapFromArray(keyValues));
+    public static void clearAllEncounters() {
+        Debug.log(TAG, "clearAllEncounters");
+        encounterByFriendName().clear();
+        saveEncounters();
     }
 
-    public static void reset() {
-        Log.i(TAG, "Reset encounters");
-        encounterByFriendName.clear();
+    private static void deleteEncounter(Encounter encounter) {
+        encounterByFriendName().remove(encounter.getFriend().name);
     }
 
     /**
      * Update each active encounter to reflect that no geotrigger was received since the previous one.
      * This must be called right before handling any new Enter events in a batch.
      * @param now - for test we can mess with time
-     *
-     * TODO: this could be eliminated now that EmaNotification works
      */
     public static void updateAllForPassedTime(Instant now) {
-        Log.d(TAG, "updateAllForPassedTime, keys= " + encounterByFriendName.keySet() + ", now=" + now);
-        for (Encounter encounter: encounterByFriendName.values()) {
+        Log.d(TAG, "updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
+        for (Encounter encounter: encounterByFriendName().values()) {
             encounter.updateForCurrentTime(now);
         }
+        saveEncounters();
     }
 
     /**
@@ -99,70 +107,80 @@ public class Encounter {
      * @return true if the geotrigger was a beacon event that is now processed
      */
     public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
-        Log.d(TAG, "handleGeotrigger: geotrigger=" + geotrigger);
-        BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
-        if (beaconEvent == null) {
-            Debug.log(TAG, "not a friend beacon event",
-                    "matchPayload", geotrigger.getMatchPayload(),
-                    "friendList", EncountersApi.friendList.toString());
-            return false;
-        }
-        Friend friend = beaconEvent.getFriend();
-        Log.d(TAG, "friend=" + friend + ", handleGeotrigger " + beaconEvent);
-        if (friend == null) {
-            Debug.log(TAG, "can't happen");
-            return false;
-        }
+        try {
+            Log.d(TAG, "handleGeotrigger: geotrigger=" + geotrigger);
+            BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
+            if (beaconEvent == null) {
+                Debug.log(TAG, "not a friend beacon event",
+                        "matchPayload", geotrigger.getMatchPayload(),
+                        "friendList", EncountersApi.friendList.toString());
+                return false;
+            }
+            Friend friend = beaconEvent.getFriend();
+            Log.d(TAG, "friend=" + friend + ", handleGeotrigger " + beaconEvent);
+            if (friend == null) {
+                Debug.log(TAG, "can't happen");
+                return false;
+            }
 
-        if (eventTime == null) {
-            eventTime = Instant.now();
-        }
-        Encounter currentEncounter = encounterByFriendName.get(friend.name);
-        if (currentEncounter != null) {
-            currentEncounter.updateForBeaconEvent(beaconEvent, eventTime);
+            if (eventTime == null) {
+                eventTime = Instant.now();
+            }
+            Encounter currentEncounter = encounterByFriendName().get(friend.name);
+            if (currentEncounter != null) {
+                currentEncounter.updateForBeaconEvent(beaconEvent, eventTime);
+                return true;
+            }
+
+            Debug.log(TAG, "no existing encounter", "friend", friend);
+            if (!beaconEvent.isBeaconEnter()) {
+                Debug.log(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName().toString());
+                return true;
+            }
+            // A new encounter
+            if (beaconEvent.isBeaconEnter()) {
+                Encounter unused = new Encounter(friend, eventTime);
+                Debug.log(TAG, "started new encounter",
+                        encounterByFriendName(), "encounterByFriendName()");
+            }
             return true;
         }
-
-        Debug.log(TAG, "no existing encounter", "friend", friend);
-        if (!beaconEvent.isBeaconEnter()) {
-            Debug.log(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName.toString());
-            return true;
+        finally {
+            saveEncounters();
         }
-        // A new encounter
-        if (beaconEvent.isBeaconEnter()) {
-            encounterByFriendName.put(
-                    friend.name,
-                    new Encounter(friend, eventTime));
-            Debug.log(TAG, "started new encounter",
-                    encounterByFriendName, "encounterByFriendName");
-        }
-        return true;
     }
-
 
     ////////////////////////
     //// Properties
     
     //// Encounter fields
     
-    final Friend friend;
+    private Friend _friend;
+    public Friend getFriend() {
+        return _friend;
+    }
+    public void setFriend(Friend friend) {
+        this._friend = friend;
+        encounterByFriendName().put(friend.name, this);
+    }
+
 
     //// Encounter state is a function of these 3 initialEnter, recentExit, mostRecentEnter and currentTime
     
     /** Time of the initial Enter geotrigger */
-    final Instant initialEnter;
-    
-    /**
-     * For Transient encounter only: time of most recent Exit geotrigger that is not followed by an Enter geotrigger.
-     */
-    Optional<Instant> recentExit = Optional.empty();
+    Instant initialEnter;
+
     /**
      * Time of the most reccent Enter geotrigger
      */
     Instant mostRecentEnter;
-    
-    
-    EncounterType encounterType = EncounterType.TRANSIENT;
+
+    /**
+     * For Transient encounter only: time of most recent Exit geotrigger that is not followed by an Enter geotrigger.
+     */
+    Optional<Instant> recentExit = Optional.empty();
+
+    // Stats
     int numDeltaT = 0;
     double sumDeltaT = 0;
     double sumDeltaT2 = 0;
@@ -187,7 +205,7 @@ public class Encounter {
 
     /** Start new encounter */
     Encounter(Friend friend, Instant eventTime) {
-        this.friend = friend;
+        setFriend(friend);
         initialEnter = eventTime;
         mostRecentEnter = eventTime;
 
@@ -237,7 +255,7 @@ public class Encounter {
     void terminateEncounter(Instant endTime) {
         Debug.log(TAG, "terminateEncounter", "encounter", this);
         HashMap<String, Object> event = this.toMap();
-        switch (encounterType) {
+        switch (getEncounterType()) {
             case TRANSIENT:
                 event.put("event_type", "start_transient_encounter");
                 event.put("timestamp", EmaMessageQueue.encodeTimestamp(initialEnter));
@@ -251,12 +269,12 @@ public class Encounter {
         }
         event.put("timestamp", EmaMessageQueue.encodeTimestamp(endTime));
         EncountersApi.instance.sendEmaEvent(event);
-        encounterByFriendName.remove(friend.name);
+        Encounter.deleteEncounter(this);
     }
 
     void becomeActual() {
         Debug.log(TAG, "transient encounter becomes actual");
-        encounterType = EncounterType.ACTUAL;
+//        setEncounterType(EncounterType.ACTUAL);
         signalStartActual();
 
         // TODO: fix this to allow enter & exit notifications
@@ -309,10 +327,10 @@ public class Encounter {
     //// misc
 
     public boolean isActual() {
-        return encounterType == EncounterType.ACTUAL;
+        return getEncounterType() == EncounterType.ACTUAL;
     }
     public boolean isTransient() {
-        return encounterType == EncounterType.TRANSIENT;
+        return getEncounterType() == EncounterType.TRANSIENT;
     }
 
     /**
@@ -348,7 +366,7 @@ public class Encounter {
     private void signalEnd(Instant endAt) {
         Debug.log(TAG, "signalEnd", "encounter", this);
         HashMap<String, Object> event = this.toMap();
-        switch (encounterType) {
+        switch (getEncounterType()) {
             case TRANSIENT:
                 event.put("event_type", "start_transient_encounter");
                 event.put("timestamp", EmaMessageQueue.encodeTimestamp(initialEnter));
@@ -366,8 +384,8 @@ public class Encounter {
 
     private HashMap<String,Object> toMap() {
         HashMap<String,Object>  map = new HashMap<String,Object> ();
-        map.put("friend_name", friend.name);
-        map.put("kontakt_beacon_id", friend.tag);
+        map.put("friend_name", getFriend().name);
+        map.put("kontakt_beacon_id", getFriend().tag);
         map.put("min_duration_secs", EncountersApi.instance.getMinDuration().getSeconds());
         map.put("actual_enc_timeout_secs", EncountersApi.instance.getActualTimeout().getSeconds());
         map.put("transient_enc_timeout_secs", EncountersApi.instance.getTransientTimeout().getSeconds());
@@ -380,13 +398,103 @@ public class Encounter {
         return map;
     }
 
+    ///////////////////////////
+    //// Encounter persistence over reboot
+
+    static final String TI_PROP_KEY = Encounter.class.getName() + ".STORE";
+
+    private static void saveEncounters() {
+        JSONArray encounters = new JSONArray();
+        for (Encounter e: encounterByFriendName().values()) {
+            encounters.put(e.toJson());
+        }
+        TiApplication.getInstance().getAppProperties().setString(
+                TI_PROP_KEY,
+                encounters.toString());
+    }
+
+    private static void restoreEncounters() {
+        String savedValue =
+                TiApplication.getInstance().getAppProperties().getString(TI_PROP_KEY, "[]");
+        Debug.log(TAG, "DEBUG>>>>>> restoreEncounters", "savedValue", savedValue);
+        try {
+            JSONArray encounters = new JSONArray(savedValue);
+            for (int i = 0; i < encounters.length(); ++i) {
+                JSONObject encounterJson = encounters.getJSONObject(i);
+                new Encounter(encounterJson);
+            }
+            Debug.log(TAG, "DEBUG>>>>>> restoreEncounters result",
+                    "encounterByFriendName", encounterByFriendName().toString());
+
+        } catch (JSONException e) {
+            Debug.error(TAG, "bad stored encounter list",
+                    "savedValue", savedValue);
+        }
+    }
+
+    JSONObject toJson() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("friendName", getFriend().name);
+            json.put("initialEnter", initialEnter.getEpochSecond());
+            json.put("mostRecentEnter", mostRecentEnter.getEpochSecond());
+            json.put("recentExit", recentExit.isPresent()
+                    ? recentExit.get().getEpochSecond()
+                    : -1);
+            json.put("numDeltaT", numDeltaT);
+            json.put("sumDeltaT", sumDeltaT);
+            json.put("sumDeltaT2", sumDeltaT2);
+            json.put("maxDeltaT", maxDeltaT);
+
+        } catch (JSONException e) {
+           Debug.error(TAG, "while serializing encounter" + e.getMessage(),
+                   "encounter", this
+           );
+        }
+        return json;
+    }
+
+    /** Create encounter by deserializing */
+    private Encounter(JSONObject json) {
+        try {
+            setFriend(findFriend((String) json.get("friendName")));
+            initialEnter = Instant.ofEpochSecond(json.getLong("initialEnter"));
+            mostRecentEnter = Instant.ofEpochSecond(json.getLong("mostRecentEnter"));
+            long  t = json.getLong("recentExit");
+            recentExit = t == -1 ? Optional.empty() : Optional.of(Instant.ofEpochSecond(t));
+            numDeltaT = json.getInt("numDeltaT");
+            sumDeltaT = json.getDouble("sumDeltaT");
+            sumDeltaT2 = json.getDouble("sumDeltaT2");
+            maxDeltaT = json.getInt("maxDeltaT");
+
+            encounterByFriendName().put(
+                    getFriend().name,
+                    this);
+
+        } catch (JSONException e) {
+            Debug.error(TAG, "Got exception" + e.getMessage(),
+                    "serializedEncounter", json.toString()
+            );
+        }
+    }
+
+    private static Friend findFriend(String friendName) {
+        for (Friend f: EncountersApi.friendList) {
+            if (f.name.equals(friendName)) {
+                return f;
+            }
+        }
+        Debug.error(TAG, "Friend does not exist",
+                "friendName", friendName);
+        return null;
+    }
 
     ///////////////////////////
     //// Boiler plate
 
     @Override
     public String toString() {
-        return "Encounter(friend=" + friend + ", start=" + initialEnter + ", type=" + encounterType +
+        return "Encounter(friend=" + getFriend() + ", start=" + initialEnter + ", type=" + getEncounterType() +
                 ", recentExit=" + recentExit +
                 ", mostRecentEnter=" + mostRecentEnter +
                 ", actualAt=" + becomesActualAt() +

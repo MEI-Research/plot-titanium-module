@@ -26,6 +26,8 @@ public class OnBoot extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent ignored) {
         Log.i("OnBoot", "starting services");
+
+        // TODO: would like to remove these references
         GeotriggerHandlerService.onBoot(context);
     }
 }

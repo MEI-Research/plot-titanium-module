@@ -73,7 +73,6 @@ public class EncountersApi extends KrollProxy {
         props.setString(PropKey.FRIEND_LIST, friendCsv);
 
         _setFriendList(friendCsv);
-        Log.d(TAG, "DEBUG>>>>>>> setFriendlist result=" + friendList);
     }
 
     public Duration getMinDuration() {
@@ -111,6 +110,12 @@ public class EncountersApi extends KrollProxy {
     public void setMaxEncounterDurationHours(Object hours) {
         long seconds = Math.round(TiConvert.toDouble(hours) * 3600);
         props.setLong(PropKey.MAX_DUR, seconds);
+    }
+
+    /** This should be called when EMA logs out */
+    @Kroll.method()
+    public void clearAllEncounters() {
+        Encounter.clearAllEncounters();
     }
 
     /**

@@ -2,7 +2,7 @@
 # this is your module manifest and used by Titanium
 # during compilation, packaging, distribution, etc.
 #
-version: 3.5.0
+version: 3.6.0
 apiversion: 4
 author: Mark Mendel, Jon Kravetz
 license: Apache License 2.0

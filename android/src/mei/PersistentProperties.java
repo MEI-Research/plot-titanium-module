@@ -40,8 +40,8 @@ public class PersistentProperties<Key extends Enum<Key>> {
     }
 
     public String getString(Key key, String dflt) {
-        Log.d(TAG, "getString: map=" + map);
-        Log.d(TAG, "getString: dflt=" + String.valueOf(dflt));
+//        Log.d(TAG, "getString: map=" + map);
+//        Log.d(TAG, "getString: dflt=" + String.valueOf(dflt));
         return map.getOrDefault(key, dflt);
     }
 
