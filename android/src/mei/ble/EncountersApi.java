@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.LinkedTransferQueue;
 
-import mei.Debug;
+import mei.EmaLog;
 import mei.EmaMessageQueue;
 import mei.PersistentProperties;
 
@@ -69,7 +69,7 @@ public class EncountersApi extends KrollProxy {
 
     @Kroll.setProperty
     public void setFriendList(String friendCsv) {
-        Debug.log(TAG, "setFriendList", "friendCsv", friendCsv);
+        EmaLog.info(TAG, "setFriendList", "friendCsv", friendCsv);
         props.setString(PropKey.FRIEND_LIST, friendCsv);
 
         _setFriendList(friendCsv);

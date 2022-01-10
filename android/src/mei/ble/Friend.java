@@ -1,14 +1,8 @@
 package mei.ble;
 
 import android.os.Build;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import mei.Debug;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class Friend {

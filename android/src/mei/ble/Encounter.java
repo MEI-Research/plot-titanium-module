@@ -19,7 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import mei.EmaMessageQueue;
-import mei.Debug;
+import mei.EmaLog;
 
 
 /**
@@ -51,12 +51,6 @@ public class Encounter {
 
     private static final String TAG = Encounter.class.getName();
 
-    public EncounterType getEncounterType() {
-        return Instant.now().isAfter(becomesActualAt())
-                ? EncounterType.ACTUAL
-                : EncounterType.TRANSIENT;
-    }
-
     ////////////////////////
     //// Static features
 
@@ -73,7 +67,7 @@ public class Encounter {
     }
 
     public static void clearAllEncounters() {
-        Debug.log(TAG, "clearAllEncounters");
+        EmaLog.info(TAG, "clearAllEncounters");
         encounterByFriendName().clear();
         saveEncounters();
     }
@@ -88,11 +82,16 @@ public class Encounter {
      * @param now - for test we can mess with time
      */
     public static void updateAllForPassedTime(Instant now) {
-        Log.d(TAG, "updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
-        for (Encounter encounter: encounterByFriendName().values()) {
-            encounter.updateForCurrentTime(now);
+        try {
+            trace("updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
+            for (Encounter encounter : encounterByFriendName().values()) {
+                encounter.updateForCurrentTime(now);
+            }
+            saveEncounters();
         }
-        saveEncounters();
+        catch (Exception ex) {
+            EmaLog.error(TAG, ex);
+        }
     }
 
     /**
@@ -108,18 +107,18 @@ public class Encounter {
      */
     public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
         try {
-            Log.d(TAG, "handleGeotrigger: geotrigger=" + geotrigger);
+           trace("handleGeotrigger: geotrigger=" + geotrigger);
             BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
             if (beaconEvent == null) {
-                Debug.log(TAG, "not a friend beacon event",
+                EmaLog.info(TAG, "not a friend beacon event",
                         "matchPayload", geotrigger.getMatchPayload(),
                         "friendList", EncountersApi.friendList.toString());
                 return false;
             }
             Friend friend = beaconEvent.getFriend();
-            Log.d(TAG, "friend=" + friend + ", handleGeotrigger " + beaconEvent);
+           trace("friend=" + friend + ", handleGeotrigger " + beaconEvent);
             if (friend == null) {
-                Debug.log(TAG, "can't happen");
+                EmaLog.info(TAG, "can't happen");
                 return false;
             }
 
@@ -132,17 +131,21 @@ public class Encounter {
                 return true;
             }
 
-            Debug.log(TAG, "no existing encounter", "friend", friend);
+            EmaLog.info(TAG, "no existing encounter", "friend", friend);
             if (!beaconEvent.isBeaconEnter()) {
-                Debug.log(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName().toString());
+                EmaLog.info(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName().toString());
                 return true;
             }
             // A new encounter
             if (beaconEvent.isBeaconEnter()) {
                 Encounter unused = new Encounter(friend, eventTime);
-                Debug.log(TAG, "started new encounter",
+                EmaLog.info(TAG, "started new encounter",
                         encounterByFriendName(), "encounterByFriendName()");
             }
+            return true;
+        }
+        catch (Exception ex) {
+            EmaLog.error(TAG, ex);
             return true;
         }
         finally {
@@ -164,7 +167,6 @@ public class Encounter {
         encounterByFriendName().put(friend.name, this);
     }
 
-
     //// Encounter state is a function of these 3 initialEnter, recentExit, mostRecentEnter and currentTime
     
     /** Time of the initial Enter geotrigger */
@@ -174,6 +176,15 @@ public class Encounter {
      * Time of the most reccent Enter geotrigger
      */
     Instant mostRecentEnter;
+
+    EncounterType _encounterType = EncounterType.TRANSIENT;
+    EncounterType getEncounterType() {
+        return _encounterType;
+    }
+    void setEncounterType(EncounterType et) {
+        _encounterType = et;
+    }
+
 
     /**
      * For Transient encounter only: time of most recent Exit geotrigger that is not followed by an Enter geotrigger.
@@ -212,12 +223,12 @@ public class Encounter {
         EncounterUpdateReceiver.scheduleNextUpdateBefore(becomesActualAt());
 
         clearStats();
-        Log.d(TAG, "Start " + this.toString() + " at " + eventTime);
+       trace("Start " + this.toString() + " at " + eventTime);
     }
 
     /** Apply clock ticks */
     void updateForCurrentTime(Instant now) {
-        //Log.d(TAG, "updateForCurrentTime: " + this);
+       trace("updateForCurrentTime: " + this);
 
         if (recentExit.isPresent()) {
             Instant applyExitAt  = recentExit.get().plus(
@@ -242,18 +253,19 @@ public class Encounter {
         }
         else { // isActual
             if (now.isAfter(ageOutAt())) {
-                Debug.log(TAG, "aging out", "encounter", this);
+                EmaLog.info(TAG, "aging out", "encounter", this);
                 terminateEncounter(ageOutAt());
             }
             else {
                 EncounterUpdateReceiver.scheduleNextUpdateBefore(ageOutAt());
             }
         }
+       trace("updateForCurrentTime result: encounter=" + this);
         //Debug.log(TAG, "updateForCurrentTime result", "encounter", this.toString());
     }
 
     void terminateEncounter(Instant endTime) {
-        Debug.log(TAG, "terminateEncounter", "encounter", this);
+        EmaLog.info(TAG, "terminateEncounter", "encounter", this);
         HashMap<String, Object> event = this.toMap();
         switch (getEncounterType()) {
             case TRANSIENT:
@@ -273,8 +285,8 @@ public class Encounter {
     }
 
     void becomeActual() {
-        Debug.log(TAG, "transient encounter becomes actual");
-//        setEncounterType(EncounterType.ACTUAL);
+        EmaLog.info(TAG, "transient encounter becomes actual");
+        setEncounterType(EncounterType.ACTUAL);
         signalStartActual();
 
         // TODO: fix this to allow enter & exit notifications
@@ -286,13 +298,13 @@ public class Encounter {
 
     /** Apply a geotrigger */
     void updateForBeaconEvent(BeaconEvent beaconEvent, Instant now) {
-        Log.d(TAG, "updateForBeaconEvent:" + this);
+       trace("updateForBeaconEvent:" + this);
         if (beaconEvent.isBeaconExit()) {
             recentExit = Optional.of(now);
         }
         else { // isBeaconEnter()
             if (recentExit.isPresent()) {
-                Log.d(TAG, "Resume from spurious exit ");
+               trace("Resume from spurious exit ");
 
                 updateStats(now, recentExit.get());
                 recentExit = Optional.empty();
@@ -304,7 +316,7 @@ public class Encounter {
             mostRecentEnter = now;
         }
         updateAllForPassedTime(now);
-        Debug.log(TAG, "updateForBeaconEvent", "encounter", this);
+        EmaLog.info(TAG, "updateForBeaconEvent", "encounter", this.toString());
     }
 
     private void clearStats() {
@@ -364,7 +376,7 @@ public class Encounter {
      * For actual encounters, just send the end event.
      */
     private void signalEnd(Instant endAt) {
-        Debug.log(TAG, "signalEnd", "encounter", this);
+        EmaLog.info(TAG, "signalEnd", "encounter", this);
         HashMap<String, Object> event = this.toMap();
         switch (getEncounterType()) {
             case TRANSIENT:
@@ -416,18 +428,18 @@ public class Encounter {
     private static void restoreEncounters() {
         String savedValue =
                 TiApplication.getInstance().getAppProperties().getString(TI_PROP_KEY, "[]");
-        Debug.log(TAG, "DEBUG>>>>>> restoreEncounters", "savedValue", savedValue);
+        EmaLog.info(TAG, "DEBUG>>>>>> restoreEncounters", "savedValue", savedValue);
         try {
             JSONArray encounters = new JSONArray(savedValue);
             for (int i = 0; i < encounters.length(); ++i) {
                 JSONObject encounterJson = encounters.getJSONObject(i);
                 new Encounter(encounterJson);
             }
-            Debug.log(TAG, "DEBUG>>>>>> restoreEncounters result",
+            EmaLog.info(TAG, "DEBUG>>>>>> restoreEncounters result",
                     "encounterByFriendName", encounterByFriendName().toString());
 
         } catch (JSONException e) {
-            Debug.error(TAG, "bad stored encounter list",
+            EmaLog.error(TAG, "bad stored encounter list",
                     "savedValue", savedValue);
         }
     }
@@ -441,14 +453,15 @@ public class Encounter {
             json.put("recentExit", recentExit.isPresent()
                     ? recentExit.get().getEpochSecond()
                     : -1);
+            json.put("encounterType", getEncounterType().name());
             json.put("numDeltaT", numDeltaT);
             json.put("sumDeltaT", sumDeltaT);
             json.put("sumDeltaT2", sumDeltaT2);
             json.put("maxDeltaT", maxDeltaT);
 
         } catch (JSONException e) {
-           Debug.error(TAG, "while serializing encounter" + e.getMessage(),
-                   "encounter", this
+           EmaLog.error(TAG, "while serializing encounter" + e.getMessage(),
+                   "encounter", this.toString()
            );
         }
         return json;
@@ -458,21 +471,20 @@ public class Encounter {
     private Encounter(JSONObject json) {
         try {
             setFriend(findFriend((String) json.get("friendName")));
+
             initialEnter = Instant.ofEpochSecond(json.getLong("initialEnter"));
             mostRecentEnter = Instant.ofEpochSecond(json.getLong("mostRecentEnter"));
             long  t = json.getLong("recentExit");
             recentExit = t == -1 ? Optional.empty() : Optional.of(Instant.ofEpochSecond(t));
+            setEncounterType(EncounterType.valueOf(
+                    json.getString("encounterType")));
             numDeltaT = json.getInt("numDeltaT");
             sumDeltaT = json.getDouble("sumDeltaT");
             sumDeltaT2 = json.getDouble("sumDeltaT2");
             maxDeltaT = json.getInt("maxDeltaT");
 
-            encounterByFriendName().put(
-                    getFriend().name,
-                    this);
-
         } catch (JSONException e) {
-            Debug.error(TAG, "Got exception" + e.getMessage(),
+            EmaLog.error(TAG, "Got exception" + e.getMessage(),
                     "serializedEncounter", json.toString()
             );
         }
@@ -484,9 +496,13 @@ public class Encounter {
                 return f;
             }
         }
-        Debug.error(TAG, "Friend does not exist",
+        EmaLog.error(TAG, "Friend does not exist",
                 "friendName", friendName);
         return null;
+    }
+
+    private static void trace(String message) {
+        Log.i(TAG, message);
     }
 
     ///////////////////////////

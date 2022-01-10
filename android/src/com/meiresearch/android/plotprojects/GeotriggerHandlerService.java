@@ -19,7 +19,7 @@ import mei.ble.Encounter;
 import com.plotprojects.retail.android.GeotriggerHandlerUtil;
 import com.plotprojects.retail.android.Geotrigger;
 
-import mei.Debug;
+import mei.EmaLog;
 import mei.ble.EncountersApi;
 
 import org.appcelerator.titanium.TiApplication;
@@ -63,7 +63,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
      * @param context
      */
     public static void onBoot(Context context) {
-        Debug.log(TAG, "onBoot starting");
+        EmaLog.info(TAG, "onBoot starting");
         Intent intent = new Intent(context, GeotriggerHandlerService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent);
@@ -127,7 +127,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                 if(geofenceName.indexOf("generic,") == 0){
                     geofenceName = "generic";
                 }
-                Debug.log(TAG, "geoFENCE trigger");
+                EmaLog.info(TAG, "geoFENCE trigger");
                 sendEventToEMA(ts, geofenceName, geotrigger.getId(), geotrigger.getTrigger(), geotrigger.getGeofenceLatitude(), geotrigger.getGeofenceLongitude());
                 sendNotification(geotrigger.getTrigger());
             }
@@ -136,7 +136,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
     private void logGeotrigger(Geotrigger geotrigger) {
         // All of the properties of the geotrigger (aka Enter Event)
-        Debug.log(TAG, "got geotrigger",
+        EmaLog.info(TAG, "got geotrigger",
                 "trigger", geotrigger.getTrigger(),
                 "name", geotrigger.getName(),
                 "matchPayload", geotrigger.getMatchPayload());

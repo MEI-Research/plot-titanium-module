@@ -14,7 +14,7 @@ import org.appcelerator.titanium.TiApplication;
 
 import java.time.Instant;
 
-import mei.Debug;
+import mei.EmaLog;
 
 /**
  * Schedules updating Encounters
@@ -67,7 +67,7 @@ public class EncounterUpdateReceiver extends BroadcastReceiver  {
             scheduleNextUpdateBefore(oldUpdateAt);
             return;
         }
-        Debug.log(TAG, "onReceive: wakeup", "updateAt", oldUpdateAt);
+        EmaLog.info(TAG, "onReceive: wakeup", "updateAt", oldUpdateAt);
         Encounter.updateAllForPassedTime(now);
     }
 }

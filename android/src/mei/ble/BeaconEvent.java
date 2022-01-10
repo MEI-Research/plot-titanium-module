@@ -10,7 +10,7 @@ import com.plotprojects.retail.android.Geotrigger;
 import java.time.Instant;
 import java.util.List;
 
-import mei.Debug;
+import mei.EmaLog;
 
 /**
  * A wrapper for Geotriggers that are beacon detections.
@@ -35,7 +35,7 @@ public final class BeaconEvent {
      */
     public static BeaconEvent forGeotrigger(Geotrigger geotrigger) {
         BeaconEvent beaconEvent = new BeaconEvent(geotrigger);
-        Debug.log(TAG, "forGeotrigger=" + beaconEvent);
+        EmaLog.info(TAG, "forGeotrigger=" + beaconEvent);
         if (beaconEvent.getFriend() == null) {
             return null;
         }
