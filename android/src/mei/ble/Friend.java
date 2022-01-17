@@ -28,7 +28,7 @@ public class Friend {
 
     @Override
     public String toString() {
-        return "Friend(" + name + ", " + majorId + ", " + minorId + ", " + tag + ")";
+        return "Friend(" + name + ", " + majorId + "-" + minorId + ", " + tag + ")";
     }
 
 }

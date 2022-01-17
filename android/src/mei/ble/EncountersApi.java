@@ -102,7 +102,6 @@ public class EncountersApi extends KrollProxy {
         props.setLong(PropKey.ACTUAL_TIMEOUT, val);
     }
 
-    private Duration maxEncounterDuration = Duration.ofHours(8);
     public Duration getMaxEncounterDuration() {
         return Duration.ofSeconds(props.getLong(PropKey.MAX_DUR, 8L * 60 * 60));
     }
@@ -128,26 +127,11 @@ public class EncountersApi extends KrollProxy {
         Encounter.updateAllForPassedTime(Instant.now());
         Log.d(TAG, "fetchEvents: updated size=" + undeliveredEncounterEvents.size());
         return msgQueue.fetchMessages();
-//        JSONArray result = new JSONArray();
-//        while (true) synchronized (undeliveredEncounterEvents) {
-//            HashMap<String, Object> evt = undeliveredEncounterEvents.poll();
-//            if (evt == null)
-//                break;
-//            try {
-//                result.put(new JSONObject(evt));
-//            } catch (Exception e) {
-//                Debug.log(TAG, "Can't convert to JSON" , "evt", evt);
-//            }
-//        }
-//        return result.toString();
     }
 
     public void sendEmaEvent(HashMap<String,Object> event) {
         Log.d(TAG, "sendEmaEvent: " + event);
         msgQueue.sendMessage(event);
-//        synchronized (undeliveredEncounterEvents) {
-//            undeliveredEncounterEvents.add(new HashMap<String,Object>(event));
-//        }
         boolean hasListener = this.fireEvent("ble.event", null);
         if (!hasListener) {
             Log.w(TAG, "No listener for event: " + event);
