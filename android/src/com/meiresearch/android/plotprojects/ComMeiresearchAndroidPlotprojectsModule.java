@@ -8,9 +8,10 @@
  */
 package com.meiresearch.android.plotprojects;
 
+import mei.ble.Encounter;
+import mei.ble.EncountersApi;
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
-import org.appcelerator.kroll.KrollRuntime;
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.kroll.common.TiConfig;
 
@@ -19,36 +20,41 @@ import org.appcelerator.titanium.TiApplication;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Collection;
 import java.util.ArrayList;
 
-import java.io.OutputStreamWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
 
 import com.plotprojects.retail.android.NotificationTrigger;
-import com.plotprojects.retail.android.FilterableNotification;
 import com.plotprojects.retail.android.Geotrigger;
-import com.plotprojects.retail.android.OpenUriReceiver;
 import com.plotprojects.retail.android.Plot;
-import com.plotprojects.retail.android.PlotConfiguration;
+import com.plotprojects.retail.android.SentGeotrigger;
+import com.plotprojects.retail.android.SentNotification;
+
+import com.plotprojects.retail.android.PlotAddon;
+import com.plotprojects.addon.interaction_tracer.InteractionTracerAddon;
+
 import com.meiresearch.android.plotprojects.GeotriggerBatches.GeotriggersAndId;
 
 
-
+/**
+ * This is the API of the module exposed to javascript.
+ *
+ * TODO: most of these are not needed. Get rid of them
+ */
+@RequiresApi(api = Build.VERSION_CODES.O)
 @Kroll.module(name="ComMeiresearchAndroidPlotprojects", id="com.meiresearch.android.plotprojects")
-public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
-	{
+public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 
 	// Standard Debugging variables
-	private static final String LCAT = "ComMeiresearchAndroidPlotprojectsModule";
+	private static final String LCAT = "MEIPlotModule";
 	private static final boolean DBG = TiConfig.LOGD;
 
 	private static Boolean isEnabled = false;
@@ -70,6 +76,20 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
 	}
 
 	// Methods
+	@Kroll.method()
+	public void start() {
+		//Encounter.reset();
+	}
+
+	@Kroll.method()
+	public void stop() {
+		// should be called on logout. Don't collect encounters
+		// Plot.disable();
+	}
+
+	/**
+	 * Called on bye EMA on login and after every sync.
+	 */
 	@Kroll.method
 	public void initPlot() {
 		// put module init code that needs to run when the application is created
@@ -80,6 +100,16 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
 		SettingsUtil.setGeotriggerHandlerEnabled(true);
 		Plot.init(activity);
 
+		// Interaction
+		try {
+			PlotAddon.register(InteractionTracerAddon.class, activity);
+
+		}
+		catch (Exception ex) {
+			Log.e(LCAT, "PlotAddon.register failed, ignoring", ex);
+            EncountersApi.msgQueue.logToEma("TPlotAddon.register failed", (HashMap<String, Object>) null);
+        }
+
 		isEnabled = Plot.isEnabled();
 		isGeoTriggerHandlerEnabled = SettingsUtil.isGeotriggerHandlerEnabled();
 		version = Plot.getVersion();
@@ -88,7 +118,47 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
 		Log.d(LCAT, "Plot Version is - " + version);
 		Log.d(LCAT, "Is Plot Enabled? - " + isEnabled.toString());
 		Log.d(LCAT, "Is GeotriggerHandler Enabled? - " + isGeoTriggerHandlerEnabled.toString());
+
+		//Encounter.logToEma("Test message from initPlot()", null);
 	}
+
+	/**
+	 * To facilitate client-specific MEI tiModules, all changes should be in a client- or feature-
+	 * specific package and vend its API via this TiProxy.
+	 * The module maintains a Map<String,String> of custom properties are used by client-specific
+	 * extensions to the MEI Plotproject module. They are writeable by EMA, and readable only from
+	 * within the module.
+	 * This makes applying updates from plotprojects/master branch easier.
+	 */
+	@Kroll.getProperty
+	public EncountersApi getExtensionApi() {
+		return EncountersApi.instance;
+	}
+
+//	@Kroll.getProperty
+//	public EncountersApi getEncounters() {
+//		return EncountersApi.instance;
+//	}
+
+//	/**
+//	 * Retrieves events detected
+//	 *
+//	 * @return an array of encounter rows (javascript Objects)
+//	 */
+//	@Kroll.method()
+//	//public HashMap<String,Object>[] fetchEvents() {
+//	public Object[] fetchEvents() {
+//		ArrayList<HashMap<String, Object>> result = new ArrayList<HashMap<String, Object>>();
+//		HashMap<String, Object> ev = new HashMap<>();
+//		ev.put("event_type", "start_encounter");
+//		ev.put("timestamp", new Date());
+//		result.add(ev);
+//		Log.d(LCAT, "fetchEvents: " + result);
+//
+//		@SuppressWarnings("unchecked")
+//		HashMap<String,Object>[] t =  (HashMap<String,Object>[]) new HashMap<?,?>[0];
+//		return result.toArray(t);
+//	}
 
 	@Kroll.method
 	public void enable() {
@@ -100,16 +170,16 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
 		Plot.disable();
 	}
 
-	@Kroll.getProperty @Kroll.method
+	@Kroll.method
 	public boolean getEnabled() {
 		return Plot.isEnabled();
 	}
 
 
-	@Kroll.getProperty @Kroll.method
-	public String getVersion() {
-		return Plot.getVersion();
-	}
+//	@Kroll.getProperty @Kroll.method
+//	public String getVersion() {
+//		return Plot.getVersion();
+//	}
 
 	@Kroll.method
 	public void mailDebugLog() {
@@ -198,8 +268,12 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
 //		return result;
 //	}
 
+	/*
+	 * TODO: this is not used?
+	 * @param batch
+	 * /
 	@Kroll.method
-	public void sendNotifications(HashMap batch) {
+	public void sendNotifications(HashMap<String, Object> batch) {
 		Log.d(LCAT, "sendNotifications");
 		String filterId = (String) batch.get("filterId");
 		List<FilterableNotification> notifications = NotificationBatches.getBatch(filterId);
@@ -208,19 +282,20 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
 		List<FilterableNotification> notificationsToSend = JsonUtil.getNotifications(jsonNotifications, notifications);
 		NotificationBatches.sendBatch(filterId, notificationsToSend);
 	}
+	*/
 
 	@Kroll.method
-	public HashMap popGeotriggers() {
+	public HashMap<String, Object> popGeotriggers() {
 		GeotriggersAndId geotriggersAndId = GeotriggerBatches.popBatch();
 
-		HashMap<String, Object> result = new HashMap<String, Object>();
+		HashMap<String, Object> result = new HashMap<>();
 		result.put("handlerId", geotriggersAndId.getId());
 		result.put("geotriggers", JsonUtil.geotriggersToMap(geotriggersAndId.getGeotriggers()));
 		return result;
 	}
 
 	@Kroll.method
-	public void markGeotriggersHandled(HashMap batch) {
+	public void markGeotriggersHandled(HashMap<String, Object> batch) {
 		Log.d(LCAT, "markGeotriggersHandled - A");
 
 		String handlerId = (String) batch.get("handlerId");
@@ -261,25 +336,25 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule
 	}
 
 	@Kroll.getProperty @Kroll.method
-	public HashMap[] getLoadedNotifications() {
-		return JsonUtil.notificationTriggersToMap(new ArrayList(Plot.getLoadedNotifications()));
+	public HashMap<String, Object>[] getLoadedNotifications() {
+		return JsonUtil.notificationTriggersToMap(new ArrayList<NotificationTrigger>(Plot.getLoadedNotifications()));
 	}
 
 	@Kroll.getProperty @Kroll.method
-	public HashMap[] getLoadedGeotriggers() {
+	public HashMap<String,Object>[] getLoadedGeotriggers() {
 		Log.d(LCAT, "getLoadedGeotriggers");
-		return JsonUtil.geotriggersToMap(new ArrayList(Plot.getLoadedGeotriggers()));
+		return JsonUtil.geotriggersToMap(new ArrayList<Geotrigger>(Plot.getLoadedGeotriggers()));
 	}
 
 	@Kroll.getProperty @Kroll.method
-	public HashMap[] getSentNotifications() {
-		return JsonUtil.sentNotificationsToMap(new ArrayList(Plot.getSentNotifications()));
+	public HashMap<String,Object>[] getSentNotifications() {
+		return JsonUtil.sentNotificationsToMap(new ArrayList<SentNotification>(Plot.getSentNotifications()));
 	}
 
 	@Kroll.getProperty @Kroll.method
-	public HashMap[] getSentGeotriggers() {
+	public HashMap<String,Object>[] getSentGeotriggers() {
 		Log.d(LCAT, "getSentGeotriggers");
-		return JsonUtil.sentGeotriggersToMap(new ArrayList(Plot.getSentGeotriggers()));
+		return JsonUtil.sentGeotriggersToMap(new ArrayList<SentGeotrigger>(Plot.getSentGeotriggers()));
 	}
 
 	@Kroll.method

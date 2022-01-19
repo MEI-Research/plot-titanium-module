@@ -14,3 +14,9 @@ tmp/
 .gradle/
 plotprojects-example/platforms/*
 plotprojects-example/modules/*
+# Ignore Gradle project-specific cache directory
+.gradle
+.idea
+
+# now constructed from template
+manifest

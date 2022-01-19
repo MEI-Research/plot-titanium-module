@@ -1,26 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ti:module xmlns:ti="http://ti.appcelerator.org" xmlns:android="http://schemas.android.com/apk/res/android">
-	<android>
-		<manifest>
-			<uses-feature android:glEsVersion="0x00020000" android:required="true" />
-			<uses-permission android:name="${applicationId}.permission.MAPS_RECEIVE" />
-			<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-			<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-            <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-            <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-            <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-            <uses-permission android:name="alarm.permission.SET_ALARM"/>
-			<application>
-                <receiver android:name=".GeotriggerHandlerService" android:exported="false">
-    				<intent-filter>
-    					<action android:name="${applicationId}.plot.HandleGeotriggers" />
-    				</intent-filter>
-    			</receiver>
-                <receiver android:name=".EMANotificationBroadcastReceiver" android:exported="true" android:enabled="true"/>
-            </application>
-		</manifest>
-	</android>
-	<modules>
-		<module platform="android">ti.playservices</module>
-	</modules>
+  <android>
+    <manifest>
+      <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+      <uses-permission android:name="${applicationId}.permission.MAPS_RECEIVE" />
+      <uses-permission android:name="android.permission.BLUETOOTH" />
+      <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+      <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+      <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+      <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+      <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+      <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+      <uses-permission android:name="alarm.permission.SET_ALARM"/>
+
+
+      <application>
+        <meta-data android:name="com.google.android.nearby.messages.API_KEY"
+                   android:value="AIzaSyASLqTm4U1d-SmLK-Kr5xrsLSmoHI8afXE" />
+        <receiver android:name=".GeotriggerHandlerService" android:exported="false">
+          <intent-filter>
+            <action android:name="${applicationId}.plot.HandleGeotriggers" />
+          </intent-filter>
+        </receiver>
+        <receiver android:name=".EMANotificationBroadcastReceiver" android:exported="true" android:enabled="true"/>
+        <receiver android:name="mei.ble.EncounterUpdateReceiver" android:exported="true" android:enabled="true"/>
+        <!--
+            Start detection on boot.
+            TODO: cherry-pick this to plotproject/rc!
+        -->
+        <receiver android:name="mei.ble.OnBoot">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+      </application>
+    </manifest>
+  </android>
+  <modules>
+    <module platform="android">ti.playservices</module>
+  </modules>
 </ti:module>

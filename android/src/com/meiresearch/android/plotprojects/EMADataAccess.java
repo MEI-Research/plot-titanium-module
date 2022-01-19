@@ -36,13 +36,18 @@ public class EMADataAccess {
     }
 
     public static String getStringProperty(String propName){
-        Log.d(TAG, "getStringProperty start");
         TiProperties props = TiApplication.getInstance().getAppProperties();
-
         String str = props.getString(propName, "");
-
-        Log.d(TAG, "getStringProperty end");
         return str;
+    }
+
+    public static int getInt(String propName, int defaultValue) {
+        try {
+            return Integer.parseInt(EMADataAccess.getStringProperty(propName));
+        }
+        catch (NumberFormatException ex) {
+            return defaultValue;
+        }
     }
 
     // appends an element to the specified persistent data array

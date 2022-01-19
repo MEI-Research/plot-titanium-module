@@ -22,7 +22,7 @@ public class EMANotificationBroadcastReceiver extends BroadcastReceiver {
 
     public static String NOTIFICATION_ID = "notification-id";
     public static String NOTIFICATION = "notification";
-    private static final String PRIMARY_CHANNEL_ID =
+    public static final String PRIMARY_CHANNEL_ID =
             "12";
 
         @Override
