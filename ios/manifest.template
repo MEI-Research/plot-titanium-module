@@ -1,5 +1,6 @@
 architectures: arm64 armv7 i386 x86_64
 description: Enable the power of Location Based Notifications provided by the Plot plugin in your Titanium apps. Our module can also be found on GitHub at www.github.com/PlotProjects/plot-titanium-module and the documentation can be found at www.plotprojects.com/support
+apiversion: 2
 
 # these should not be edited
 name: plot-plugin-module
@@ -7,4 +8,3 @@ moduleid: com.plotprojects.ti
 guid: b7xc9ood-2bky-7v8g-kdv5-cska7vengatz
 platform: iphone
 mac: false
-
