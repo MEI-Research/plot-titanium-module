@@ -293,7 +293,8 @@ public class Encounter {
     }
 
     void becomeActual() {
-        EmaLog.info(TAG, "transient encounter becomes actual");
+        EmaLog.info(TAG, "transient encounter becomes actual",
+            "encounter", this.toString());
         setEncounterType(EncounterType.ACTUAL);
         signalStartActual();
 
