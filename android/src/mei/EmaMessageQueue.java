@@ -61,9 +61,9 @@ public class EmaMessageQueue {
         return result;
     }
 
-    public void logToEma(String message, Object... keyValues) {
-        logToEma(message, MapUtil.mapFromArray(keyValues));
-    }
+//    public void logToEma(String message, Object... keyValues) {
+//        logToEma(message, MapUtil.mapFromArray(keyValues));
+//    }
 
     public void logToEma(String message, HashMap<String, Object> more_data) {
         HashMap<String, Object> msg = new HashMap<String, Object>();

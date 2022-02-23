@@ -155,9 +155,9 @@ public class Encounter {
 
     ////////////////////////
     //// Properties
-    
+
     //// Encounter fields
-    
+
     private Friend _friend;
     public Friend getFriend() {
         return _friend;
@@ -168,7 +168,7 @@ public class Encounter {
     }
 
     //// Encounter state is a function of these 3 initialEnter, recentExit, mostRecentEnter and currentTime
-    
+
     /** Time of the initial Enter geotrigger */
     Instant initialEnter;
 
@@ -253,7 +253,7 @@ public class Encounter {
         }
         else { // isActual
             if (now.isAfter(ageOutAt())) {
-                EmaLog.info(TAG, "aging out", "encounter", this);
+                EmaLog.info(TAG, "aging out", "encounter", this.toString());
                 terminateEncounter(ageOutAt());
             }
             else {
@@ -265,7 +265,7 @@ public class Encounter {
     }
 
     void terminateEncounter(Instant endTime) {
-        EmaLog.info(TAG, "terminateEncounter", "encounter", this);
+        EmaLog.info(TAG, "terminateEncounter", "encounter", this.toString());
         HashMap<String, Object> event = this.toMap();
         switch (getEncounterType()) {
             case TRANSIENT:
@@ -375,24 +375,24 @@ public class Encounter {
      * For transients, send *both* the start and end encounter events to EMA
      * For actual encounters, just send the end event.
      */
-    private void signalEnd(Instant endAt) {
-        EmaLog.info(TAG, "signalEnd", "encounter", this);
-        HashMap<String, Object> event = this.toMap();
-        switch (getEncounterType()) {
-            case TRANSIENT:
-                event.put("event_type", "start_transient_encounter");
-                event.put("timestamp", EmaMessageQueue.encodeTimestamp(initialEnter));
-                EncountersApi.instance.sendEmaEvent(event);
-
-                event.put("event_type", "end_transient_encounter");
-                break;
-            case ACTUAL:
-                event.put("event_type", "end_actual_encounter");
-                break;
-        }
-        event.put("timestamp", EmaMessageQueue.encodeTimestamp(endAt));
-        EncountersApi.instance.sendEmaEvent(event);
-    }
+//    private void signalEnd(Instant endAt) {
+//        EmaLog.info(TAG, "signalEnd", "encounter", this.toString());
+//        HashMap<String, Object> event = this.toMap();
+//        switch (getEncounterType()) {
+//            case TRANSIENT:
+//                event.put("event_type", "start_transient_encounter");
+//                event.put("timestamp", EmaMessageQueue.encodeTimestamp(initialEnter));
+//                EncountersApi.instance.sendEmaEvent(event);
+//
+//                event.put("event_type", "end_transient_encounter");
+//                break;
+//            case ACTUAL:
+//                event.put("event_type", "end_actual_encounter");
+//                break;
+//        }
+//        event.put("timestamp", EmaMessageQueue.encodeTimestamp(endAt));
+//        EncountersApi.instance.sendEmaEvent(event);
+//    }
 
     private HashMap<String,Object> toMap() {
         HashMap<String,Object>  map = new HashMap<String,Object> ();
