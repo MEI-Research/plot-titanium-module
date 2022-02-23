@@ -21,7 +21,6 @@ import org.json.JSONObject;
 import mei.EmaMessageQueue;
 import mei.EmaLog;
 
-
 /**
  * Implements the state machine from the BLE Encounter Definition document
  *
@@ -66,10 +65,18 @@ public class Encounter {
         return _encounterByFriendName;
     }
 
+    /**
+     * Guard against modifying the state of Encounters in multiple threads: the AlarmManager &
+     * PlotProjects can both call the state changing public static methods
+     */
+    private static Object STATE_LOCK = new Object();
+
     public static void clearAllEncounters() {
-        EmaLog.info(TAG, "clearAllEncounters");
-        encounterByFriendName().clear();
-        saveEncounters();
+        synchronized(STATE_LOCK) {
+            EmaLog.info(TAG, "clearAllEncounters");
+            encounterByFriendName().clear();
+            saveEncounters();
+        }
     }
 
     private static void deleteEncounter(Encounter encounter) {
@@ -82,15 +89,17 @@ public class Encounter {
      * @param now - for test we can mess with time
      */
     public static void updateAllForPassedTime(Instant now) {
-        try {
-            trace("updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
-            for (Encounter encounter : encounterByFriendName().values()) {
-                encounter.updateForCurrentTime(now);
+        synchronized(STATE_LOCK) {
+            try {
+                trace("updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
+
+                for (Encounter encounter : encounterByFriendName().values()) {
+                    encounter.updateForCurrentTime(now);
+                }
+                saveEncounters();
+            } catch (Exception ex) {
+                EmaLog.error(TAG, ex);
             }
-            saveEncounters();
-        }
-        catch (Exception ex) {
-            EmaLog.error(TAG, ex);
         }
     }
 
@@ -106,50 +115,49 @@ public class Encounter {
      * @return true if the geotrigger was a beacon event that is now processed
      */
     public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
-        try {
-           trace("handleGeotrigger: geotrigger=" + geotrigger);
-            BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
-            if (beaconEvent == null) {
-                EmaLog.info(TAG, "not a friend beacon event",
+        synchronized(STATE_LOCK) {
+            try {
+                trace("handleGeotrigger: geotrigger=" + geotrigger);
+                BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
+                if (beaconEvent == null) {
+                    EmaLog.info(TAG, "not a friend beacon event",
                         "matchPayload", geotrigger.getMatchPayload(),
                         "friendList", EncountersApi.friendList.toString());
-                return false;
-            }
-            Friend friend = beaconEvent.getFriend();
-           trace("friend=" + friend + ", handleGeotrigger " + beaconEvent);
-            if (friend == null) {
-                EmaLog.info(TAG, "can't happen");
-                return false;
-            }
+                    return false;
+                }
+                Friend friend = beaconEvent.getFriend();
+                trace("friend=" + friend + ", handleGeotrigger " + beaconEvent);
+                if (friend == null) {
+                    EmaLog.info(TAG, "can't happen");
+                    return false;
+                }
+                if (eventTime == null) {
+                    eventTime = Instant.now();
+                }
+                Encounter currentEncounter = encounterByFriendName().get(friend.name);
+                if (currentEncounter != null) {
+                    currentEncounter.updateForBeaconEvent(beaconEvent, eventTime);
+                    return true;
+                }
 
-            if (eventTime == null) {
-                eventTime = Instant.now();
-            }
-            Encounter currentEncounter = encounterByFriendName().get(friend.name);
-            if (currentEncounter != null) {
-                currentEncounter.updateForBeaconEvent(beaconEvent, eventTime);
-                return true;
-            }
-
-            EmaLog.info(TAG, "no existing encounter", "friend", friend);
-            if (!beaconEvent.isBeaconEnter()) {
-                EmaLog.info(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName().toString());
-                return true;
-            }
-            // A new encounter
-            if (beaconEvent.isBeaconEnter()) {
-                Encounter unused = new Encounter(friend, eventTime);
-                EmaLog.info(TAG, "started new encounter",
+                EmaLog.info(TAG, "no existing encounter", "friend", friend);
+                if (!beaconEvent.isBeaconEnter()) {
+                    EmaLog.info(TAG, "Ignoring non-enter beacon event w/o existing encounter, map=" + encounterByFriendName().toString());
+                    return true;
+                }
+                // A new encounter
+                if (beaconEvent.isBeaconEnter()) {
+                    Encounter unused = new Encounter(friend, eventTime);
+                    EmaLog.info(TAG, "started new encounter",
                         encounterByFriendName(), "encounterByFriendName()");
+                }
+                return true;
+            } catch (Exception ex) {
+                EmaLog.error(TAG, ex);
+                return true;
+            } finally {
+                saveEncounters();
             }
-            return true;
-        }
-        catch (Exception ex) {
-            EmaLog.error(TAG, ex);
-            return true;
-        }
-        finally {
-            saveEncounters();
         }
     }
 
