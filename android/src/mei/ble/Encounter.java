@@ -8,6 +8,7 @@ import java.util.Optional;
 import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.meiresearch.android.plotprojects.GeotriggerHandlerService;
@@ -84,40 +85,30 @@ public class Encounter {
     }
 
     /**
-     * Update each active encounter to reflect that no geotrigger was received since the previous one.
-     * This must be called right before handling any new Enter events in a batch.
-     * @param now - for test we can mess with time
+     * Updates all Encounters for the given time and optionally for a geotrigger event at that time.
+     *
+     * @param now - estimate of when the event happened; defaults to current time.
+     *                  Geotrigger has no time filed & we get them in batche so the caller might attempt to distribute
+     *                  the events over the previous interval.
+     * @param geotrigger - a Geotrigger that might be for a beacon data campaign. Null if just updating
+     *                   due to a timer.
+     * @return true if the geotrigger was a beacon event that is now processed
      */
-    public static void updateAllForPassedTime(Instant now) {
+    public static boolean updateEncounters(
+        Instant now,
+        @Nullable Geotrigger geotrigger
+    ) {
         synchronized(STATE_LOCK) {
             try {
                 trace("updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
-
                 for (Encounter encounter : encounterByFriendName().values()) {
                     encounter.updateForCurrentTime(now);
                 }
-                saveEncounters();
-            } catch (Exception ex) {
-                EmaLog.error(TAG, ex);
-            }
-        }
-    }
 
-    /**
-     * Process a Geotrigger if it is part of a beacon data campaign.
-     * Responsible for sending Encounter start events.
-     * Assumes that expired encounters have already been removed.
-     *
-     * @param geotrigger - a Geotrigger that might be for a beacon data campaign
-     * @param eventTime - estimate of when the event happened; defaults to current time.
-     *                  Geotrigger has no time filed & we get them in batche so the caller might attempt to distribute
-     *                  the events over the previous interval.
-     * @return true if the geotrigger was a beacon event that is now processed
-     */
-    public static boolean handleGeotrigger(Geotrigger geotrigger, Instant eventTime) {
-        synchronized(STATE_LOCK) {
-            try {
                 trace("handleGeotrigger: geotrigger=" + geotrigger);
+                if (geotrigger == null)
+                    return false;
+
                 BeaconEvent beaconEvent = BeaconEvent.forGeotrigger(geotrigger);
                 if (beaconEvent == null) {
                     EmaLog.info(TAG, "not a friend beacon event",
@@ -131,12 +122,12 @@ public class Encounter {
                     EmaLog.info(TAG, "can't happen");
                     return false;
                 }
-                if (eventTime == null) {
-                    eventTime = Instant.now();
+                if (now == null) {
+                    now = Instant.now();
                 }
                 Encounter currentEncounter = encounterByFriendName().get(friend.name);
                 if (currentEncounter != null) {
-                    currentEncounter.updateForBeaconEvent(beaconEvent, eventTime);
+                    currentEncounter.updateForBeaconEvent(beaconEvent, now);
                     return true;
                 }
 
@@ -147,7 +138,7 @@ public class Encounter {
                 }
                 // A new encounter
                 if (beaconEvent.isBeaconEnter()) {
-                    Encounter unused = new Encounter(friend, eventTime);
+                    Encounter unused = new Encounter(friend, now);
                     EmaLog.info(TAG, "started new encounter",
                         encounterByFriendName(), "encounterByFriendName()");
                 }
@@ -324,7 +315,7 @@ public class Encounter {
             }
             mostRecentEnter = now;
         }
-        updateAllForPassedTime(now);
+        updateEncounters(now, null);
         EmaLog.info(TAG, "updateForBeaconEvent", "encounter", this.toString());
     }
 

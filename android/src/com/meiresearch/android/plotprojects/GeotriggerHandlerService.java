@@ -79,7 +79,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
 
         // If EXIT geotriggers are not reliable, this will need be called on a schedule
         // if an EXIT trigger needs to fire.  Currently not the case.
-        Encounter.updateAllForPassedTime(eventTime);
+        Encounter.updateEncounters(eventTime, null);
 
         if (!GeotriggerHandlerUtil.isGeotriggerHandlerBroadcastReceiverIntent(context, intent))
             return;
@@ -94,7 +94,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             logGeotrigger(geotrigger);
             // logGeotriggerToEma(geotrigger);
 
-            if (Encounter.handleGeotrigger(geotrigger, eventTime)) {
+            if (Encounter.updateEncounters(eventTime, geotrigger)) {
                 continue;
             }
             // TODO: we can eventually allow both kinds of campaigns
