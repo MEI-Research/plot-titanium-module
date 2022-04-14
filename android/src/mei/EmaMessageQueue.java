@@ -21,6 +21,12 @@ import java.util.HashMap;
  * JSON encodes and queues up messages to be fetched by EMA.
  * A message is a JSON encodable Hash.  It must have an entry for key "type".
  * The special type "message" should be posted by EMA to the applog with tag=queueName
+ *
+ * Every ti-module should have a message queue.  It's possible for a module to have more than one,
+ * which
+ *
+ * Events will not get delivered if the service sends them while the app is not running.
+ * EMA *must* follow the queue by both listening to its event AND polling when the app resumes.
  */
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class EmaMessageQueue {
@@ -61,9 +67,9 @@ public class EmaMessageQueue {
         return result;
     }
 
-    public void logToEma(String message, Object... keyValues) {
-        logToEma(message, MapUtil.mapFromArray(keyValues));
-    }
+//    public void logToEma(String message, Object... keyValues) {
+//        logToEma(message, MapUtil.mapFromArray(keyValues));
+//    }
 
     public void logToEma(String message, HashMap<String, Object> more_data) {
         HashMap<String, Object> msg = new HashMap<String, Object>();
@@ -92,12 +98,12 @@ public class EmaMessageQueue {
             saveState(undeliveredMessages.toString());
         }
 
-        // Messageually EMA will only need to call fetchMessages() on open, resume and from this TI message.
-        // For now, commenting out to avoid limitations on boot receiver runtime
-        //        boolean hasListener = this.fireMessage(EVENT_ADDED, message);
-        //        if (!hasListener) {
-        //            Log.w(TAG, "No listener for messages: " + message);
-        //        }
+        // Messageually EMA will only need to call fetchMessages() on open, resume and when this event
+        // is received.
+//        boolean hasListener = this.fireMessage(EVENT_ADDED, 'message');
+//        if (!hasListener) {
+//            Log.w(TAG, "No listener for messages: " + message);
+//        }
         Log.d(TAG, "sendMessage, undeliveredMessages=[" + undeliveredMessages + "]" );
     }
 

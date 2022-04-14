@@ -124,7 +124,7 @@ public class EncountersApi extends KrollProxy {
      */
     @Kroll.method()
     public String fetchEvents() {
-        Encounter.updateAllForPassedTime(Instant.now());
+        Encounter.updateEncounters(Instant.now(), null);
         Log.d(TAG, "fetchEvents: updated size=" + undeliveredEncounterEvents.size());
         return msgQueue.fetchMessages();
     }

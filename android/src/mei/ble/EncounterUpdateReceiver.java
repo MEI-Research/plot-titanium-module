@@ -10,6 +10,8 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import com.plotprojects.retail.android.Geotrigger;
+
 import org.appcelerator.titanium.TiApplication;
 
 import java.time.Instant;
@@ -19,7 +21,7 @@ import mei.EmaLog;
 /**
  * Schedules updating Encounters
  *
- * @see Encounter#updateAllForPassedTime(Instant)
+ * @see Encounter#updateEncounters(Instant, Geotrigger)
  */
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class EncounterUpdateReceiver extends BroadcastReceiver  {
@@ -68,6 +70,6 @@ public class EncounterUpdateReceiver extends BroadcastReceiver  {
             return;
         }
         EmaLog.info(TAG, "onReceive: wakeup", "updateAt", oldUpdateAt);
-        Encounter.updateAllForPassedTime(now);
+        Encounter.updateEncounters(now, null);
     }
 }
