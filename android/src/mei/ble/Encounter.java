@@ -1,7 +1,9 @@
 package mei.ble;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
@@ -80,10 +82,6 @@ public class Encounter {
         }
     }
 
-    private static void deleteEncounter(Encounter encounter) {
-        encounterByFriendName().remove(encounter.getFriend().name);
-    }
-
     /**
      * Updates all Encounters for the given time and optionally for a geotrigger event at that time.
      *
@@ -101,8 +99,13 @@ public class Encounter {
         synchronized(STATE_LOCK) {
             try {
                 trace("updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
-                for (Encounter encounter : encounterByFriendName().values()) {
-                    encounter.updateForCurrentTime(now);
+                Iterator<Map.Entry<String, Encounter>> itr = encounterByFriendName().entrySet().iterator();
+                while (itr.hasNext()) {
+                    Encounter encounter = itr.next().getValue();
+                    boolean terminate = encounter.updateForCurrentTime(now);
+                    if (terminate) {
+                        itr.remove();
+                    }
                 }
 
                 trace("handleGeotrigger: geotrigger=" + geotrigger);
@@ -225,10 +228,13 @@ public class Encounter {
        trace("Start " + this.toString() + " at " + eventTime);
     }
 
-    /** Apply clock ticks */
-    void updateForCurrentTime(Instant now) {
+    /**
+     * Apply clock ticks.
+     * @return true if the Encounter should be deleted
+     */
+    boolean updateForCurrentTime(Instant now) {
        trace("updateForCurrentTime: " + this);
-
+        boolean terminate = false;
         if (recentExit.isPresent()) {
             Instant applyExitAt  = recentExit.get().plus(
                     isTransient() ?
@@ -237,6 +243,7 @@ public class Encounter {
             );
             if (now.isAfter(applyExitAt))  {
                 terminateEncounter(recentExit.get());
+                terminate = true;
             }
             else {
                 EncounterUpdateReceiver.scheduleNextUpdateBefore(applyExitAt);
@@ -261,6 +268,7 @@ public class Encounter {
         }
        trace("updateForCurrentTime result: encounter=" + this);
         //Debug.log(TAG, "updateForCurrentTime result", "encounter", this.toString());
+        return terminate;
     }
 
     void terminateEncounter(Instant endTime) {
@@ -280,7 +288,7 @@ public class Encounter {
         }
         event.put("timestamp", EmaMessageQueue.encodeTimestamp(endTime));
         EncountersApi.instance.sendEmaEvent(event);
-        Encounter.deleteEncounter(this);
+        //Encounter.deleteEncounter(this);
     }
 
     void becomeActual() {

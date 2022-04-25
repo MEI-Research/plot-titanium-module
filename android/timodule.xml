@@ -17,7 +17,7 @@
       <application>
         <meta-data android:name="com.google.android.nearby.messages.API_KEY"
                    android:value="AIzaSyASLqTm4U1d-SmLK-Kr5xrsLSmoHI8afXE" />
-        <receiver android:name=".GeotriggerHandlerService" android:exported="false">
+        <receiver android:name=".GeotriggerHandlerService" android:exported="true">
           <intent-filter>
             <action android:name="${applicationId}.plot.HandleGeotriggers" />
           </intent-filter>
@@ -28,7 +28,7 @@
             Start detection on boot.
             TODO: cherry-pick this to plotproject/rc!
         -->
-        <receiver android:name="mei.ble.OnBoot">
+        <receiver android:name="mei.ble.OnBoot" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
