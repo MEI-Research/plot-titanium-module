@@ -98,6 +98,8 @@ public class Encounter {
     ) {
         synchronized(STATE_LOCK) {
             try {
+                // Update all current encounters for passage of time
+
                 trace("updateAllForPassedTime, keys= " + encounterByFriendName().keySet() + ", now=" + now);
                 Iterator<Map.Entry<String, Encounter>> itr = encounterByFriendName().entrySet().iterator();
                 while (itr.hasNext()) {
@@ -107,6 +109,8 @@ public class Encounter {
                         itr.remove();
                     }
                 }
+
+                // Apply the geotrigger, possibly creating, updating, or removing an Encounter
 
                 trace("handleGeotrigger: geotrigger=" + geotrigger);
                 if (geotrigger == null)
