@@ -8,7 +8,7 @@ allprojects {
             url 'https://maven-repo.plotprojects.com'
         }
 
-        maven { url 'http://developer.huawei.com/repo/' }
+        maven { url 'https://developer.huawei.com/repo/' }
     }
 }
 dependencies {
