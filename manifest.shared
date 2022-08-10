@@ -3,7 +3,6 @@
 # during compilation, packaging, distribution, etc.
 #
 version: 3.6.4+ble
-apiversion: 4
 author: Mark Mendel, Jon Kravetz
 license: Apache License 2.0
 copyright: Copyright (c) 2022 MEI Research, Ltd.
