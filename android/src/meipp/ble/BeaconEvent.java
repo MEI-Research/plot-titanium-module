@@ -1,4 +1,4 @@
-package mei.ble;
+package meipp.ble;
 
 import android.os.Build;
 import android.util.Log;
@@ -10,7 +10,7 @@ import com.plotprojects.retail.android.Geotrigger;
 import java.time.Instant;
 import java.util.List;
 
-import mei.EmaLog;
+import meipp.EmaLog;
 
 /**
  * A wrapper for Geotriggers that are beacon detections.

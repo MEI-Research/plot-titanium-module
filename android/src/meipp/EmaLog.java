@@ -1,4 +1,4 @@
-package mei;
+package meipp;
 
 import android.os.Build;
 import android.util.Log;
@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 
-import mei.ble.EncountersApi;
+import meipp.ble.EncountersApi;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class EmaLog {

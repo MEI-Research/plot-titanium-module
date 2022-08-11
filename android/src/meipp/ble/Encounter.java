@@ -1,7 +1,6 @@
-package mei.ble;
+package meipp.ble;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -21,8 +20,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import mei.EmaMessageQueue;
-import mei.EmaLog;
+import meipp.EmaMessageQueue;
+import meipp.EmaLog;
 
 /**
  * Implements the state machine from the BLE Encounter Definition document

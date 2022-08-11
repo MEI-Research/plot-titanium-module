@@ -1,4 +1,4 @@
-package mei.ble;
+package meipp.ble;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -16,7 +16,7 @@ import org.appcelerator.titanium.TiApplication;
 
 import java.time.Instant;
 
-import mei.EmaLog;
+import meipp.EmaLog;
 
 /**
  * Schedules updating Encounters

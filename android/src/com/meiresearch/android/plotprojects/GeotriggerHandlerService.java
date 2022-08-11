@@ -15,12 +15,12 @@
  */
 package com.meiresearch.android.plotprojects;
 
-import mei.ble.Encounter;
+import meipp.ble.Encounter;
 import com.plotprojects.retail.android.GeotriggerHandlerUtil;
 import com.plotprojects.retail.android.Geotrigger;
 
-import mei.EmaLog;
-import mei.ble.EncountersApi;
+import meipp.EmaLog;
+import meipp.ble.EncountersApi;
 
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;

@@ -1,4 +1,4 @@
-package mei.ble;
+package meipp.ble;
 
 import android.os.Build;
 
@@ -15,9 +15,9 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.LinkedTransferQueue;
 
-import mei.EmaLog;
-import mei.EmaMessageQueue;
-import mei.PersistentProperties;
+import meipp.EmaLog;
+import meipp.EmaMessageQueue;
+import meipp.PersistentProperties;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 @Kroll.proxy() // doesn't work:!(propertyAccessors={"transientTimeoutSecs", "actualTimeoutSecs"})
