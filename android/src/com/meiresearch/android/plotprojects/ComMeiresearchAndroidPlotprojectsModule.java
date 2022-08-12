@@ -8,7 +8,8 @@
  */
 package com.meiresearch.android.plotprojects;
 
-import meipp.ble.EncountersApi;
+import mei.ble.Encounter;
+import mei.ble.EncountersApi;
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;

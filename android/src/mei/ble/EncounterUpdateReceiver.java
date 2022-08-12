@@ -1,4 +1,4 @@
-package meipp.ble;
+package mei.ble;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;

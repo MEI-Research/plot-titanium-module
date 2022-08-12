@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 
-import meipp.ble.EncountersApi;
+import mei.ble.EncountersApi;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class EmaLog {

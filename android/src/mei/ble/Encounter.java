@@ -1,4 +1,4 @@
-package meipp.ble;
+package mei.ble;
 
 import java.time.Instant;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package meipp.ble;
+package mei.ble;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
