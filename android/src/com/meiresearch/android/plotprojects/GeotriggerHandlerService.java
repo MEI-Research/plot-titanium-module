@@ -89,16 +89,18 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
             return;
 
         List<Geotrigger> triggers = batch.getGeotriggers();
-        for (Geotrigger geotrigger: triggers) {
+        if (ComMeiresearchAndroidPlotprojectsModule.isEnabled) {
+            for (Geotrigger geotrigger: triggers) {
 
-            logGeotrigger(geotrigger);
-            // logGeotriggerToEma(geotrigger);
+                logGeotrigger(geotrigger);
+                // logGeotriggerToEma(geotrigger);
 
-            if (Encounter.updateEncounters(eventTime, geotrigger)) {
-                continue;
+                if (Encounter.updateEncounters(eventTime, geotrigger)) {
+                    continue;
+                }
+                // TODO: we can eventually allow both kinds of campaigns
+                // handleGeotrigger(geotrigger);
             }
-            // TODO: we can eventually allow both kinds of campaigns
-            // handleGeotrigger(geotrigger);
         }
         batch.markGeotriggersHandled(triggers);
     }

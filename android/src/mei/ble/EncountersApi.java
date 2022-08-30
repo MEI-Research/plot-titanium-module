@@ -1,23 +1,21 @@
 package mei.ble;
 
 import android.os.Build;
-
 import androidx.annotation.RequiresApi;
-
+import meipp.EmaLog;
+import meipp.EmaMessageQueue;
+import meipp.PersistentProperties;
 import org.appcelerator.kroll.KrollProxy;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
-
 import org.appcelerator.titanium.util.TiConvert;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.LinkedTransferQueue;
-
-import meipp.EmaLog;
-import meipp.EmaMessageQueue;
-import meipp.PersistentProperties;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 @Kroll.proxy() // doesn't work:!(propertyAccessors={"transientTimeoutSecs", "actualTimeoutSecs"})

@@ -57,9 +57,13 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 	private static final String LCAT = "MEIPlotModule";
 	private static final boolean DBG = TiConfig.LOGD;
 
-	private static Boolean isEnabled = false;
+	/**  If plotDisableIsBroken, we just pretend it's disabled & discard events */
+	public static Boolean isEnabled = false;
+
 	private static String version = "0.00.00";
 	private static Boolean isGeoTriggerHandlerEnabled = false;
+
+	public static boolean plotDisableIsBroken = false;
 
 	// You can define constants with @Kroll.constant, for example:
 	// @Kroll.constant public static final String EXTERNAL_NAME = value;
@@ -75,17 +79,7 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		Log.d(LCAT, "onAppCreate");
 	}
 
-	// Methods
-	@Kroll.method()
-	public void start() {
-		//Encounter.reset();
-	}
-
-	@Kroll.method()
-	public void stop() {
-		// should be called on logout. Don't collect encounters
-		// Plot.disable();
-	}
+	// Instance methods
 
 	/**
 	 * Called on bye EMA on login and after every sync.
@@ -110,13 +104,12 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
             EncountersApi.msgQueue.logToEma("TPlotAddon.register failed", (HashMap<String, Object>) null);
         }
 
-		isEnabled = Plot.isEnabled();
 		isGeoTriggerHandlerEnabled = SettingsUtil.isGeotriggerHandlerEnabled();
 		version = Plot.getVersion();
 
 
 		Log.d(LCAT, "Plot Version is - " + version);
-		Log.d(LCAT, "Is Plot Enabled? - " + isEnabled.toString());
+		Log.d(LCAT, "Is Plot Enabled? - " + Plot.isEnabled());
 		Log.d(LCAT, "Is GeotriggerHandler Enabled? - " + isGeoTriggerHandlerEnabled.toString());
 
 		//Encounter.logToEma("Test message from initPlot()", null);
@@ -135,39 +128,19 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 		return EncountersApi.instance;
 	}
 
-//	@Kroll.getProperty
-//	public EncountersApi getEncounters() {
-//		return EncountersApi.instance;
-//	}
-
-//	/**
-//	 * Retrieves events detected
-//	 *
-//	 * @return an array of encounter rows (javascript Objects)
-//	 */
-//	@Kroll.method()
-//	//public HashMap<String,Object>[] fetchEvents() {
-//	public Object[] fetchEvents() {
-//		ArrayList<HashMap<String, Object>> result = new ArrayList<HashMap<String, Object>>();
-//		HashMap<String, Object> ev = new HashMap<>();
-//		ev.put("event_type", "start_encounter");
-//		ev.put("timestamp", new Date());
-//		result.add(ev);
-//		Log.d(LCAT, "fetchEvents: " + result);
-//
-//		@SuppressWarnings("unchecked")
-//		HashMap<String,Object>[] t =  (HashMap<String,Object>[]) new HashMap<?,?>[0];
-//		return result.toArray(t);
-//	}
-
 	@Kroll.method
 	public void enable() {
 		Plot.enable();
+		isEnabled = true;
 	}
 
 	@Kroll.method
 	public void disable() {
-		Plot.disable();
+		Log.d(LCAT, "disable, plotDisableIsBroken=" + plotDisableIsBroken);
+		if (!plotDisableIsBroken) {
+			Plot.disable();
+		}
+		isEnabled = false;
 	}
 
 	@Kroll.method
@@ -365,5 +338,11 @@ public class ComMeiresearchAndroidPlotprojectsModule extends KrollModule {
 	@Kroll.method
 	public void clearSentGeotriggers() {
 		Plot.clearSentGeotriggers();
+	}
+
+	/** Sets flag to use work-around for bug when disabling interaction tracing */
+	@Kroll.setProperty
+	public void setPlotDisableIsBroken(boolean yn) {
+		plotDisableIsBroken = yn;
 	}
 }
