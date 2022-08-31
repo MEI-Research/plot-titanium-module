@@ -439,15 +439,15 @@ public class Encounter {
     private static void restoreEncounters() {
         String savedValue =
                 TiApplication.getInstance().getAppProperties().getString(TI_PROP_KEY, "[]");
-        EmaLog.info(TAG, "DEBUG>>>>>> restoreEncounters", "savedValue", savedValue);
+//        EmaLog.info(TAG, "DEBUG>>>>>> restoreEncounters", "savedValue", savedValue);
         try {
             JSONArray encounters = new JSONArray(savedValue);
             for (int i = 0; i < encounters.length(); ++i) {
                 JSONObject encounterJson = encounters.getJSONObject(i);
                 new Encounter(encounterJson);
             }
-            EmaLog.info(TAG, "DEBUG>>>>>> restoreEncounters result",
-                    "encounterByFriendName", encounterByFriendName().toString());
+//            EmaLog.info(TAG, "DEBUG>>>>>> restoreEncounters result",
+//                    "encounterByFriendName", encounterByFriendName().toString());
 
         } catch (JSONException e) {
             EmaLog.error(TAG, "bad stored encounter list",

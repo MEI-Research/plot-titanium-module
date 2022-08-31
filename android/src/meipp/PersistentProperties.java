@@ -43,7 +43,7 @@ public class PersistentProperties<Key extends Enum<Key>> {
     }
 
     public void setString(Key key, String value) {
-        EmaLog.info(TAG, "EMA set", "property", key.name(), "value", value);
+//        EmaLog.info(TAG, "EMA set", "property", key.name(), "value", value);
         map.put(key, value);
         tiProps().setString(tiName(key), value);
     }
