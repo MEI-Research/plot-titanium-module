@@ -2,8 +2,8 @@
 # this is your module manifest and used by Titanium
 # during compilation, packaging, distribution, etc.
 #
-version: 1.1.0+hk
-apiversion: 4
+version: 1.1.1+hk
+# apiversion: 4
 author: Mark Mendel, Jon Kravetz
 license: Apache License 2.0
 copyright: Copyright (c) 2022 MEI Research, Ltd.
