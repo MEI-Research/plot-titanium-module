@@ -3,6 +3,7 @@ bin
 build
 libs
 dist
+manifest
 *.zip
 .apt_generated
 .settings
