@@ -17,22 +17,20 @@ dependencies {
 
     // from https://files.plotprojects.com/documentation/android/3.17.0/how-to-guides/Android-integration-guide/
     implementation "org.altbeacon:android-beacon-library:2.+"
-    implementation 'com.plotprojects:plot-android:3.17.0'
+    implementation 'com.plotprojects:plot-android:3.18.0'
     implementation 'androidx.core:core:1.1.0'
     implementation 'androidx.fragment:fragment:1.1.0'
     // implementation 'androidx.work:work-runtime:2.7.1'
     // implementation 'androidx.work:work-gcm:2.7.1'
     implementation "androidx.work:work-runtime:$work_version"
     implementation "androidx.work:work-gcm:$work_version"
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.0.0'
-    implementation 'com.google.android.gms:play-services-location:19.0.1'
-    implementation 'com.google.android.gms:play-services-nearby:18.0.2'
+    implementation 'com.google.android.gms:play-services-location:20.0.0'
+    implementation 'com.google.android.gms:play-services-nearby:18.3.0'
     implementation 'com.google.android.gms:play-services-awareness:19.0.1'
 
-    implementation platform('com.google.firebase:firebase-bom:28.3.0')
+    implementation platform('com.google.firebase:firebase-bom:30.4.0')
     implementation 'com.google.firebase:firebase-core'
     implementation 'com.google.firebase:firebase-messaging'
-
 }
 
 
