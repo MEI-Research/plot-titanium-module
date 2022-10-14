@@ -69,7 +69,7 @@ public class EncounterUpdateReceiver extends BroadcastReceiver  {
             scheduleNextUpdateBefore(oldUpdateAt);
             return;
         }
-        EmaLog.info(TAG, "onReceive: wakeup", "updateAt", oldUpdateAt);
+        //EmaLog.info(TAG, "onReceive: wakeup", "updateAt", oldUpdateAt);
         Encounter.updateEncounters(now, null);
     }
 }

@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -134,7 +135,10 @@ public class EmaMessageQueue {
         }
     }
     public static String encodeTimestamp(Instant timestamp) {
-        return OffsetDateTime.ofInstant(timestamp, ZoneId.systemDefault()).toString();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ")
+                .withZone(ZoneId.systemDefault());
+
+        return formatter.format(timestamp);
     }
 
 
