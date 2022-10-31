@@ -264,6 +264,7 @@ public class Encounter {
             if (now.isAfter(ageOutAt())) {
                 EmaLog.info(TAG, "aging out", "encounter", this.toString());
                 terminateEncounter(ageOutAt());
+                terminate = true;
             }
             else {
                 EncounterUpdateReceiver.scheduleNextUpdateBefore(ageOutAt());

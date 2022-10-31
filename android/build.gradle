@@ -15,8 +15,10 @@ dependencies {
 
     implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-1.2.0-beta'
 
+    // This isn't needed anymore?
+    //implementation "org.altbeacon:android-beacon-library:2.+"
+
     // from https://files.plotprojects.com/documentation/android/3.17.0/how-to-guides/Android-integration-guide/
-    implementation "org.altbeacon:android-beacon-library:2.+"
     implementation 'com.plotprojects:plot-android:3.18.0'
     implementation 'androidx.core:core:1.1.0'
     implementation 'androidx.fragment:fragment:1.1.0'

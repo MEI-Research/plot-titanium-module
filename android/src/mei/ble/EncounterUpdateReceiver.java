@@ -44,7 +44,7 @@ public class EncounterUpdateReceiver extends BroadcastReceiver  {
                 AlarmManager am = (AlarmManager)context.getSystemService(TiApplication.ALARM_SERVICE);
                 Log.d(TAG, "DEBUG>>>>> scheduliing for " + nextUpdateAt);
                 am.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP, nextUpdateAt.getEpochSecond(), pendingIntent);
+                         AlarmManager.RTC_WAKEUP, nextUpdateAt.toEpochMilli(), pendingIntent);
 
             }
         }
