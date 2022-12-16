@@ -101,7 +101,8 @@ public class EncountersApi extends KrollProxy {
     }
 
     public Duration getMaxEncounterDuration() {
-        return Duration.ofSeconds(props.getLong(PropKey.MAX_DUR, 8L * 60 * 60));
+        return Duration.ofDays(365);
+        //return Duration.ofSeconds(props.getLong(PropKey.MAX_DUR, 8L * 60 * 60));
     }
     @Kroll.setProperty
     public void setMaxEncounterDurationHours(Object hours) {
