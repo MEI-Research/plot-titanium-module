@@ -13,7 +13,7 @@ dependencies {
     // Last version with minCompileSdk 30
     def work_version = "2.6.0"
 
-    implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-2.0.2'
+    implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-2.1.0'
 
     // This isn't needed anymore?
     //implementation "org.altbeacon:android-beacon-library:2.+"
