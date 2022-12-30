@@ -13,19 +13,17 @@ dependencies {
     // Last version with minCompileSdk 30
     def work_version = "2.6.0"
 
+    //implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-2.0.0'
     implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-2.1.0'
+    //implementation 'com.plotprojects:plot-interaction-tracer-lib:custom-mei-kontakt-1.2.0-beta'
 
     // This isn't needed anymore?
-    //implementation "org.altbeacon:android-beacon-library:2.+"
+    implementation "org.altbeacon:android-beacon-library:2.+"
 
     // from https://files.plotprojects.com/documentation/android/3.17.0/how-to-guides/Android-integration-guide/
-    implementation 'com.plotprojects:plot-android:3.18.0'
-    implementation 'androidx.core:core:1.1.0'
-    implementation 'androidx.fragment:fragment:1.1.0'
-    // implementation 'androidx.work:work-runtime:2.7.1'
-    // implementation 'androidx.work:work-gcm:2.7.1'
-    implementation "androidx.work:work-runtime:$work_version"
-    implementation "androidx.work:work-gcm:$work_version"
+    implementation 'com.plotprojects:plot-android:3.19.0'
+    implementation 'androidx.work:work-runtime:2.7.1'
+    implementation 'androidx.work:work-gcm:2.7.1'
     implementation 'com.google.android.gms:play-services-location:20.0.0'
     implementation 'com.google.android.gms:play-services-nearby:18.3.0'
     implementation 'com.google.android.gms:play-services-awareness:19.0.1'
@@ -33,6 +31,22 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:30.4.0')
     implementation 'com.google.firebase:firebase-core'
     implementation 'com.google.firebase:firebase-messaging'
+
+    // from https://files.plotprojects.com/documentation/android/3.17.0/how-to-guides/Android-integration-guide/
+    // implementation 'com.plotprojects:plot-android:3.18.0'
+    // implementation 'androidx.core:core:1.1.0'
+    // implementation 'androidx.fragment:fragment:1.1.0'
+    // // implementation 'androidx.work:work-runtime:2.7.1'
+    // // implementation 'androidx.work:work-gcm:2.7.1'
+    // implementation "androidx.work:work-runtime:$work_version"
+    // implementation "androidx.work:work-gcm:$work_version"
+    // implementation 'com.google.android.gms:play-services-location:20.0.0'
+    // implementation 'com.google.android.gms:play-services-nearby:18.3.0'
+    // implementation 'com.google.android.gms:play-services-awareness:19.0.1'
+
+    // implementation platform('com.google.firebase:firebase-bom:30.4.0')
+    // implementation 'com.google.firebase:firebase-core'
+    // implementation 'com.google.firebase:firebase-messaging'
 }
 
 
@@ -42,6 +56,7 @@ ext {
 }
 
 android {
+    // ? targetSdkVersion 33
     compileOptions {
             kotlinOptions.freeCompilerArgs += ['-module-name', "$PUBLISH_GROUP_ID.$PUBLISH_ARTIFACT_ID"]
     }

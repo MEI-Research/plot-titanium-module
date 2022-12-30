@@ -2,6 +2,10 @@
 =================================
 A ti-module for Appcelerator Titanium apps that adds location based notifications to your app.
 
+# References
+
+- [Android integration](https://files.plotprojects.com/documentation/android/3.19.0/how-to-guides/Android-integration-guide/)
+
 # Build & deploy
 
 ```

@@ -2,9 +2,9 @@
 # this is your module manifest and used by Titanium
 # during compilation, packaging, distribution, etc.
 #
-version: 3.7.4+ble
+version: 3.7.5+ble
 author: Mark Mendel, Jon Kravetz
 license: Apache License 2.0
 copyright: Copyright (c) 2022 MEI Research, Ltd.
-minsdk: 9.3.2.GA
+minsdk: 11.1.1.GA
 gitinfo: $GITINFO
