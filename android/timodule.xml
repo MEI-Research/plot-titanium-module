@@ -14,6 +14,7 @@
       <!-- Interaction Tracer-->
       <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
       <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE"/>
+      <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
 
       <!-- not needed per 12/21/22 email 
       <uses-permission android:name="android.permission.BLUETOOTH" />
