@@ -40,7 +40,8 @@ public class EncounterUpdateReceiver extends BroadcastReceiver  {
                 Context context =  TiApplication.getInstance().getApplicationContext();
                 Intent updateIntent = new Intent(context, EncounterUpdateReceiver.class);
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                        context, 0, updateIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+                        context, 0, updateIntent,
+                        PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                 AlarmManager am = (AlarmManager)context.getSystemService(TiApplication.ALARM_SERVICE);
                 Log.d(TAG, "DEBUG>>>>> scheduliing for " + nextUpdateAt);
                 am.setExactAndAllowWhileIdle(

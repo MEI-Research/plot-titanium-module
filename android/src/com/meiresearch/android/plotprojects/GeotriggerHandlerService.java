@@ -76,6 +76,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Instant eventTime = Instant.now();
         Log.d(TAG, "Geofence triggered at " + eventTime.toString());
+        Log.w(TAG, "MGM>>>> Geofence triggered at " + eventTime.toString());
 
         // If EXIT geotriggers are not reliable, this will need be called on a schedule
         // if an EXIT trigger needs to fire.  Currently not the case.
@@ -305,7 +306,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         launchIntent.setPackage(null);
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-        builder.setContentIntent(PendingIntent.getActivity(context, 0, launchIntent, 0));
+        builder.setContentIntent(PendingIntent.getActivity(context, 0, launchIntent,
+                PendingIntent.FLAG_IMMUTABLE));
 
         // send the notification immediately? only if Dwell isn't needed.
          Log.d(TAG, "Notify!!!!!");
@@ -322,8 +324,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                 notificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION, builder.build());
 
                 //Creates the pending intent which includes the notificationIntent
-                PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, notificationIntent, 0);
-
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, notificationIntent,
+                        PendingIntent.FLAG_IMMUTABLE);
                 Log.d(TAG, context.toString());
 
                 AlarmManager am = (AlarmManager)context.getSystemService(TiApplication.ALARM_SERVICE);
@@ -347,7 +349,8 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         dummyNotificationIntent.putExtra(EMANotificationBroadcastReceiver.NOTIFICATION_ID, notificationId);
 
         //Creates the pending intent which includes the notificationIntent
-        PendingIntent pendingIntentToCancel = PendingIntent.getBroadcast(context, notificationId, dummyNotificationIntent, 0);
+        PendingIntent pendingIntentToCancel = PendingIntent.getBroadcast(context, notificationId, dummyNotificationIntent,
+                PendingIntent.FLAG_IMMUTABLE);
         //PendingIntent expireIntentToCancel  = PendingIntent.getBroadcast(context, notificationId + 100, dummyNotificationIntent, 0);
 
         alarmManagerCanceller.cancel(pendingIntentToCancel);
