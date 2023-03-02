@@ -29,6 +29,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import android.app.NotificationManager;
 import android.app.NotificationChannel;
+import android.graphics.Color;
 import android.media.RingtoneManager;
 import android.app.PendingIntent;
 import android.net.Uri;
@@ -46,6 +47,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 
+import org.appcelerator.titanium.util.TiRHelper;
 import org.json.*;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
@@ -247,6 +249,7 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         }
     }
 
+    // TODO: should use ema.service as a library to do this
      public static void sendNotification(String direction){
         Log.i(TAG, "sendNotification: " + direction);
         String notificationTitle = EMADataAccess.getStringProperty("plot.notificationTitle." + direction);
@@ -286,6 +289,16 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
         NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
 
+        int notiIcon = android.R.drawable.alert_light_frame;
+        int notiTranIcon = android.R.drawable.alert_light_frame;
+        try {
+            notiIcon = TiRHelper.getApplicationResource("drawable.ic_launcherblue");
+            notiTranIcon = TiRHelper.getApplicationResource("drawable.ic_launcher");
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.toString());
+        }
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder
                 (context, channel_ID)
                 .setContentTitle(notificationTitle)
@@ -293,11 +306,16 @@ public class GeotriggerHandlerService extends BroadcastReceiver {
                 .setGroupSummary(true)
                 .setGroup(groupName)
                 .setStyle( new NotificationCompat.InboxStyle())
-                .setSmallIcon(R.drawable.btn_star)
+                .setSmallIcon(notiIcon)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setShowWhen(true)
                 .setWhen(scheduleTime);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setSmallIcon(notiTranIcon);
+            builder.setColor(Color.parseColor("#3F51B5"));
+        }
 
         Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         builder.setSound(alarmSound);
