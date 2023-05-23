@@ -18,7 +18,7 @@ dependencies {
     implementation "org.altbeacon:android-beacon-library:2.+"
 
     // from https://files.plotprojects.com/documentation/android/3.17.0/how-to-guides/Android-integration-guide/
-    implementation 'com.plotprojects:plot-android:3.18.3'
+    implementation 'com.plotprojects:plot-android:3.18.4'
     implementation 'androidx.work:work-runtime:2.7.1'
     implementation 'androidx.work:work-gcm:2.7.1'
     implementation 'com.google.android.gms:play-services-location:20.0.0'

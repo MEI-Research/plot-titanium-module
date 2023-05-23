@@ -103,8 +103,8 @@ public class Encounter {
                 Iterator<Map.Entry<String, Encounter>> itr = encounterByFriendName().entrySet().iterator();
                 while (itr.hasNext()) {
                     Encounter encounter = itr.next().getValue();
-                    boolean terminate = encounter.updateForCurrentTime(now);
-                    if (terminate) {
+                    boolean terminated = encounter.updateForCurrentTime(now);
+                    if (terminated) {
                         itr.remove();
                     }
                 }
