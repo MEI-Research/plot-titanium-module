@@ -146,7 +146,7 @@ public class Encounter {
                 if (beaconEvent.isBeaconEnter()) {
                     Encounter unused = new Encounter(friend, now);
                     EmaLog.info(TAG, "started new encounter",
-                        encounterByFriendName(), "encounterByFriendName()");
+                            "encounterMap", encounterByFriendName());
                 }
                 return true;
             } catch (Exception ex) {
@@ -440,7 +440,7 @@ public class Encounter {
     private static void restoreEncounters() {
         String savedValue =
                 TiApplication.getInstance().getAppProperties().getString(TI_PROP_KEY, "[]");
-//        EmaLog.info(TAG, "DEBUG>>>>>> restoreEncounters", "savedValue", savedValue);
+        EmaLog.info(TAG, "restoreEncounters", "savedValue", savedValue);
         try {
             JSONArray encounters = new JSONArray(savedValue);
             for (int i = 0; i < encounters.length(); ++i) {
