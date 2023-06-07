@@ -11,8 +11,8 @@ echo '[mei] Building Android Plot Projects module via Titanium SDK'
 TI_SDK_VERSION="9.3.2.GA"
 NODE_VERSION=14
 
-echo '[mei] selecting node version via `n`'
-n $NODE_VERSION
+#echo '[mei] selecting node version via `n`'
+#n $NODE_VERSION
 
 rm -rf dist build
 
